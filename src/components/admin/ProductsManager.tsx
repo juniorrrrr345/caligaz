@@ -885,15 +885,15 @@ export default function ProductsManager() {
               {/* Prix principaux */}
               <div className="mb-3">
                 <div className="grid grid-cols-2 gap-1 text-xs">
-                  {Object.entries(product.prices).slice(0, 4).map(([key, value]) => (
+                  {Object.entries(product.prices || {}).slice(0, 4).map(([key, value]) => (
                     <div key={key} className="flex justify-between text-gray-300">
                       <span>{key}</span>
                       <span className="font-medium">{value}€</span>
                     </div>
                   ))}
                 </div>
-                {Object.keys(product.prices).length > 4 && (
-                  <p className="text-gray-500 text-xs mt-1">+{Object.keys(product.prices).length - 4} prix...</p>
+                {Object.keys(product.prices || {}).length > 4 && (
+                  <p className="text-gray-500 text-xs mt-1">+{Object.keys(product.prices || {}).length - 4} prix...</p>
                 )}
               </div>
               

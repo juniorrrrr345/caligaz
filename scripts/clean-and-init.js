@@ -106,6 +106,12 @@ async function cleanAndInit() {
         name: 'Essence Sans Plomb 95',
         description: 'Carburant de qualité supérieure',
         price: 1.85,
+        prices: {
+          '1L': 1.85,
+          '5L': 9.00,
+          '10L': 17.50,
+          '20L': 34.00
+        },
         category: 'carburants',
         images: [],
         stock: 1000,
@@ -116,6 +122,12 @@ async function cleanAndInit() {
         name: 'Diesel Premium',
         description: 'Diesel haute performance',
         price: 1.75,
+        prices: {
+          '1L': 1.75,
+          '5L': 8.50,
+          '10L': 16.50,
+          '20L': 32.00
+        },
         category: 'carburants',
         images: [],
         stock: 1000,
@@ -126,6 +138,12 @@ async function cleanAndInit() {
         name: 'Huile Moteur 5W30',
         description: 'Huile synthétique haute qualité',
         price: 45.99,
+        prices: {
+          '1L': 12.99,
+          '2L': 24.99,
+          '4L': 45.99,
+          '5L': 54.99
+        },
         category: 'lubrifiants',
         images: [],
         stock: 50,
