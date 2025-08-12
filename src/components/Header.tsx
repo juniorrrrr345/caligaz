@@ -125,7 +125,7 @@ export default function Header() {
         
         <div className="flex flex-col items-center justify-center">
           <img 
-            src="https://i.imgur.com/dRCR7PM.png" 
+            src="https://i.imgur.com/F1Hopru.jpeg" 
             alt={settings.shopTitle || "CaliGaz ⛽️"} 
             className="h-12 sm:h-16 md:h-20 w-auto"
             style={{ filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))' }}
