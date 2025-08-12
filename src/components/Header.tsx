@@ -20,7 +20,17 @@ interface HeaderProps {
 export default function Header({ onMenuClick }: HeaderProps = {}) {
   const { getTotalItems, setIsOpen } = useCartStore();
   const totalItems = getTotalItems();
-  const { selectedMenu, menus } = useMenu();
+  
+  // Utiliser useMenu seulement si disponible
+  let selectedMenu = null;
+  let menus: any[] = [];
+  try {
+    const menuContext = useMenu();
+    selectedMenu = menuContext.selectedMenu;
+    menus = menuContext.menus;
+  } catch (e) {
+    // MenuProvider non disponible
+  }
   
   // Forcer les données du cache instantané - JAMAIS d'ancien contenu
   // Header instantané depuis localStorage
