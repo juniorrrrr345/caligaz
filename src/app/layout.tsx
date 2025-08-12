@@ -82,10 +82,11 @@ export default function RootLayout({
                         html, body, .main-container {
                           background-image: url(\${parsed.backgroundImage}) !important;
                           background-size: cover !important;
-                          background-position: center !important;
+                          background-position: center center !important;
                           background-repeat: no-repeat !important;
                           background-attachment: fixed !important;
                           background-color: black !important;
+                          min-height: 100vh !important;
                         }
                         .global-overlay {
                           background-color: rgba(0, 0, 0, \${(parsed.backgroundOpacity || 20) / 100}) !important;

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import MediaUploader from './MediaUploader';
 import CloudinaryUploader from './CloudinaryUploader';
+import CloudinaryDirectUploader from './CloudinaryDirectUploader';
 
 interface Product {
   _id?: string;
@@ -9,6 +10,7 @@ interface Product {
   farm: string;
   category: string;
   image: string;
+  images?: string[];
   video?: string;
   prices: {
     [key: string]: number;
@@ -34,6 +36,7 @@ export default function ProductsManager() {
     farm: '',
     category: '',
     image: '',
+    images: [],
     video: '',
     prices: {},
     promotions: {},
@@ -1025,16 +1028,17 @@ export default function ProductsManager() {
                     <div className="bg-gray-800/50 border border-white/10 rounded-lg p-4 mb-3">
                       <div className="text-sm text-gray-300 mb-3 font-medium">Choisir la méthode d'upload :</div>
                       
-                      {/* Upload Cloudinary (recommandé) */}
+                      {/* Upload Cloudinary Direct (recommandé) */}
                       <div className="mb-3">
-                        <div className="text-xs text-green-400 mb-2">✅ Recommandé - Hébergement cloud</div>
-                        <CloudinaryUploader
+                        <div className="text-xs text-green-400 mb-2">✅ Recommandé - Upload direct Cloudinary (Preset: caligaz)</div>
+                        <CloudinaryDirectUploader
                           onMediaSelected={(url, type) => {
                             if (type === 'image') {
                               updateField('image', url);
                             }
                           }}
                           acceptedTypes="image/*"
+                          label="📷 Choisir une image"
                           className="mb-2"
                         />
                       </div>
@@ -1087,16 +1091,17 @@ export default function ProductsManager() {
                     <div className="bg-gray-800/50 border border-white/10 rounded-lg p-4 mb-3">
                       <div className="text-sm text-gray-300 mb-3 font-medium">Choisir la méthode d'upload :</div>
                       
-                      {/* Upload Cloudinary (recommandé pour vidéos) */}
+                      {/* Upload Cloudinary Direct (recommandé pour vidéos) */}
                       <div className="mb-3">
-                        <div className="text-xs text-green-400 mb-2">✅ Recommandé - Hébergement cloud illimité</div>
-                        <CloudinaryUploader
+                        <div className="text-xs text-green-400 mb-2">✅ Recommandé - Upload direct Cloudinary (Preset: caligaz)</div>
+                        <CloudinaryDirectUploader
                           onMediaSelected={(url, type) => {
                             if (type === 'video') {
                               updateField('video', url);
                             }
                           }}
-                          acceptedTypes="video/*,.mov,.avi,.3gp"
+                          acceptedTypes="video/*,.mov,.avi,.3gp,.mp4"
+                          label="🎥 Choisir une vidéo"
                           className="mb-2"
                         />
                       </div>
@@ -1321,13 +1326,14 @@ export default function ProductsManager() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Image du produit</label>
-                      <CloudinaryUploader
+                      <CloudinaryDirectUploader
                         onMediaSelected={(url, type) => {
                           if (type === 'image') {
                             updateField('image', url);
                           }
                         }}
                         acceptedTypes="image/*"
+                        label="📷 Uploader une image"
                         className="mb-3"
                       />
                       <input
@@ -1348,13 +1354,14 @@ export default function ProductsManager() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Vidéo (optionnel)</label>
-                      <CloudinaryUploader
+                      <CloudinaryDirectUploader
                         onMediaSelected={(url, type) => {
                           if (type === 'video') {
                             updateField('video', url);
                           }
                         }}
-                        acceptedTypes="video/*"
+                        acceptedTypes="video/*,.mp4,.mov,.avi"
+                        label="🎥 Uploader une vidéo"
                         className="mb-3"
                       />
                       <input

@@ -4,6 +4,7 @@ interface Product {
   farm: string;
   category: string;
   image: string;
+  images?: string[];
   video?: string;
   description?: string;
   prices: {

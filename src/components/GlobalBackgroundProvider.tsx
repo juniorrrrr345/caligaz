@@ -23,13 +23,15 @@ export default function GlobalBackgroundProvider() {
       const bgStyle = backgroundImage ? `
         background-image: url(${backgroundImage});
         background-size: cover;
-        background-position: center;
+        background-position: center center;
         background-repeat: no-repeat;
         background-attachment: fixed;
         background-color: black;
+        min-height: 100vh;
       ` : `
         background-image: none;
         background-color: black;
+        min-height: 100vh;
       `;
       
       // Créer ou mettre à jour la feuille de style
