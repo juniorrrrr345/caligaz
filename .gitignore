@@ -28,6 +28,7 @@ yarn-error.log*
 # local env files
 .env*.local
 BOT_TELEGRAM_CALIGAZ/.env
+BOT_TELEGRAM_CALIGAZ/node_modules
 .env.local
 .env
 
