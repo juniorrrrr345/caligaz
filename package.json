@@ -10,9 +10,11 @@
     "setup-new-shop": "node scripts/duplicate-setup.js"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",
     "dotenv": "^17.2.1",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.537.0",
     "mongodb": "^6.18.0",
     "mongoose": "^8.16.4",
