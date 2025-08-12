@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
-import { Menu } from '@/lib/models/Menu';
-import { verifyAuth } from '@/lib/auth';
+import { connectDB } from '../../../lib/db';
+import { Menu } from '../../../lib/models/Menu';
+import { verifyAuth } from '../../../lib/auth';
 
 // GET - Récupérer tous les menus
 export async function GET() {

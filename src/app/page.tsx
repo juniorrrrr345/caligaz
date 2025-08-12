@@ -7,8 +7,8 @@ import CategoryFilter from '../components/CategoryFilter';
 import ProductCard, { Product } from '../components/ProductCard';
 import ProductDetail from '../components/ProductDetail';
 import BottomNav from '../components/BottomNav';
-import MenuSelector from '../components/MenuSelector';
-import { MenuProvider, useMenu } from '../contexts/MenuContext';
+import MenuSelector from '@/components/MenuSelector';
+import { MenuProvider, useMenu } from '@/contexts/MenuContext';
 import contentCache from '../lib/contentCache';
 
 function HomePageContent() {
