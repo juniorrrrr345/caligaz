@@ -8,25 +8,24 @@ import { toast } from 'react-hot-toast';
 
 export default function Cart() {
   const { items, isOpen, setIsOpen, updateQuantity, removeItem, clearCart, getTotalPrice } = useCartStore();
-  const [whatsappNumber, setWhatsappNumber] = useState('+33123456789');
+  const [telegramUsername, setTelegramUsername] = useState('@caligaz_shop');
   
   useEffect(() => {
-    // Charger le numéro WhatsApp depuis les settings
+    // Charger le username Telegram depuis les settings
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
-        if (data.whatsappLink) {
-          // Extraire le numéro du lien WhatsApp
-          const match = data.whatsappLink.match(/wa\.me\/(\+?[0-9]+)/);
-          if (match) {
-            setWhatsappNumber(match[1]);
-          }
-        } else if (data.telegramUsername) {
-          // Garder une compatibilité avec l'ancien système
+        if (data.telegramUsername) {
           const username = data.telegramUsername.startsWith('@') 
             ? data.telegramUsername 
             : `@${data.telegramUsername}`;
-          setWhatsappNumber(username); // Temporaire pour transition
+          setTelegramUsername(username);
+        } else if (data.telegramLink) {
+          // Extraire le username du lien Telegram
+          const match = data.telegramLink.match(/t\.me\/([^/]+)/);
+          if (match) {
+            setTelegramUsername(`@${match[1]}`);
+          }
         }
       })
       .catch(() => {});
@@ -64,17 +63,17 @@ export default function Cart() {
     // Encoder le message pour l'URL
     const encodedMessage = encodeURIComponent(message);
     
-    // Nettoyer le numéro WhatsApp (supprimer les espaces et caractères spéciaux)
-    const cleanNumber = whatsappNumber.replace(/[@\s\-\(\)]/g, '');
+    // Nettoyer le username Telegram (supprimer le @ pour l'URL)
+    const cleanUsername = telegramUsername.replace('@', '');
     
-    // Ouvrir WhatsApp avec le message pré-rempli
-    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+    // Ouvrir Telegram avec le message pré-rempli
+    const telegramUrl = `https://t.me/${cleanUsername}?text=${encodedMessage}`;
     
     // Ouvrir dans une nouvelle fenêtre
-    window.open(whatsappUrl, '_blank');
+    window.open(telegramUrl, '_blank');
     
     // Afficher un message de succès
-    toast.success('Redirection vers WhatsApp...');
+    toast.success('Redirection vers Telegram...');
     
     // Optionnel : vider le panier après un délai
     setTimeout(() => {
@@ -193,7 +192,7 @@ export default function Cart() {
                 className="w-full rounded-lg bg-gradient-to-r from-green-500 to-green-600 py-3 font-medium text-white hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center gap-2"
               >
                 <span>📱</span>
-                {whatsappNumber.includes('@') ? `Envoyer à ${whatsappNumber}` : `Commander sur WhatsApp`}
+                {telegramUsername ? `Commander via ${telegramUsername}` : `Commander sur Telegram`}
               </button>
               
               <button

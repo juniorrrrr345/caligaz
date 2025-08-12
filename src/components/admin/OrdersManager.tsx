@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import contentCache from '../../lib/contentCache';
 
 export default function OrdersManager() {
-  const [whatsappLink, setWhatsappLink] = useState('');
+  const [telegramLink, setTelegramLink] = useState('');
   const [editingLink, setEditingLink] = useState(false);
-  const [newWhatsappLink, setNewWhatsappLink] = useState('');
+  const [newTelegramLink, setNewTelegramLink] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -24,25 +24,25 @@ export default function OrdersManager() {
       const response = await fetch('/api/settings');
       if (response.ok) {
         const data = await response.json();
-        const link = data.whatsappLink || data.telegramOrderLink || data.telegramLink || '';
-        setWhatsappLink(link);
-        setNewWhatsappLink(link);
+        const link = data.telegramLink || data.telegramUsername || '';
+        setTelegramLink(link);
+        setNewTelegramLink(link);
       }
     } catch (error) {
       console.error('Erreur chargement paramètres:', error);
     }
   };
 
-  const saveWhatsappLink = async () => {
+  const saveTelegramLink = async () => {
     try {
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ whatsappLink: newWhatsappLink })
+        body: JSON.stringify({ telegramLink: newTelegramLink })
       });
 
       if (response.ok) {
-        setWhatsappLink(newWhatsappLink);
+        setTelegramLink(newTelegramLink);
         setEditingLink(false);
         
         // Rafraîchir le cache pour maintenir le background
@@ -51,7 +51,7 @@ export default function OrdersManager() {
         // Message de succès
         const successMsg = document.createElement('div');
         successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999]';
-        successMsg.textContent = '✅ Lien WhatsApp mis à jour !';
+        successMsg.textContent = '✅ Lien Telegram mis à jour !';
         document.body.appendChild(successMsg);
         setTimeout(() => successMsg.remove(), 3000);
       }
@@ -68,30 +68,30 @@ export default function OrdersManager() {
         <h1 className="text-2xl font-bold text-white">Commandes</h1>
       </div>
 
-      {/* Configuration du lien WhatsApp - responsive */}
+      {/* Configuration du lien Telegram - responsive */}
       <div className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-white/10">
         <h2 className="text-base sm:text-lg font-semibold text-white mb-4">
-          Lien WhatsApp pour commander
+          🚀 Lien Telegram pour commander
         </h2>
         
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Lien WhatsApp
+              Username ou Lien Telegram
             </label>
             
             {editingLink ? (
               <div className={`${isMobile ? 'space-y-2' : 'flex gap-2'}`}>
                 <input
                   type="url"
-                  value={newWhatsappLink}
-                  onChange={(e) => setNewWhatsappLink(e.target.value)}
-                  placeholder="https://wa.me/33612345678"
+                  value={newTelegramLink}
+                  onChange={(e) => setNewTelegramLink(e.target.value)}
+                  placeholder="@caligaz_shop ou https://t.me/caligaz_shop"
                   className="flex-1 w-full bg-gray-700 border border-white/20 text-white rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
                 <div className={`${isMobile ? 'flex gap-2' : 'flex gap-2'}`}>
                   <button
-                    onClick={saveWhatsappLink}
+                    onClick={saveTelegramLink}
                     className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-medium"
                   >
                     Sauvegarder
@@ -99,7 +99,7 @@ export default function OrdersManager() {
                   <button
                     onClick={() => {
                       setEditingLink(false);
-                      setNewWhatsappLink(whatsappLink);
+                      setNewTelegramLink(telegramLink);
                     }}
                     className="flex-1 sm:flex-none bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-medium"
                   >
@@ -110,7 +110,7 @@ export default function OrdersManager() {
             ) : (
               <div className={`${isMobile ? 'space-y-2' : 'flex gap-2 items-center'}`}>
                 <div className="flex-1 bg-gray-700 border border-white/20 text-white rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base">
-                  {whatsappLink || 'Aucun lien configuré'}
+                  {telegramLink || 'Aucun lien configuré'}
                 </div>
                 <button
                   onClick={() => setEditingLink(true)}
@@ -123,10 +123,10 @@ export default function OrdersManager() {
             
             <div className="mt-3 space-y-1">
               <p className="text-xs sm:text-sm text-gray-400">
-                Ce lien sera utilisé dans les boutons "Commander via WhatsApp"
+                Ce lien sera utilisé dans les boutons "Commander sur Telegram"
               </p>
               <p className="text-xs text-gray-500">
-                Format: https://wa.me/[code pays][numéro]
+                Format: @username ou https://t.me/username
               </p>
               {isMobile && (
                 <p className="text-xs text-blue-400 mt-2">
