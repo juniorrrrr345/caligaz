@@ -229,7 +229,7 @@ export default function HomePage() {
               {/* Logo de chargement CaliGaz ⛽️ */}
               <div className="mb-8">
                 <img 
-                  src="https://i.imgur.com/TZVe6uQ.png" 
+                  src="https://i.imgur.com/dRCR7PM.png" 
                   alt="CaliGaz ⛽️ Loading" 
                   className="h-32 sm:h-40 md:h-48 w-auto mx-auto animate-pulse"
                   style={{ filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.3))' }}

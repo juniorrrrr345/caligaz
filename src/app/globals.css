@@ -13,6 +13,33 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Styles globaux pour le fond centré sur toutes les pages */
+html, body {
+  min-height: 100vh;
+  background-color: black;
+}
+
+/* Quand une image de fond est définie */
+html.has-background, 
+body.has-background,
+.main-container.has-background {
+  background-position: center center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+  min-height: 100vh !important;
+}
+
+/* Assurer que le fond reste centré même sur mobile */
+@media (max-width: 768px) {
+  html.has-background, 
+  body.has-background,
+  .main-container.has-background {
+    background-position: center center !important;
+    background-attachment: fixed !important;
+  }
+}
+
 /* Cacher la scrollbar tout en gardant le scroll */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */

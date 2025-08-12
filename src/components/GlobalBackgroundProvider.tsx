@@ -42,6 +42,17 @@ export default function GlobalBackgroundProvider() {
         document.head.appendChild(styleElement);
       }
       
+      // Ajouter ou retirer la classe has-background
+      if (backgroundImage) {
+        document.documentElement.classList.add('has-background');
+        document.body.classList.add('has-background');
+        document.querySelector('.main-container')?.classList.add('has-background');
+      } else {
+        document.documentElement.classList.remove('has-background');
+        document.body.classList.remove('has-background');
+        document.querySelector('.main-container')?.classList.remove('has-background');
+      }
+      
       // Appliquer les styles globalement
       styleElement.textContent = `
         html, body, .main-container {

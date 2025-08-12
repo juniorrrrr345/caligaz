@@ -19,7 +19,7 @@ async function updateBackground() {
         $set: {
           shopName: 'CaliGaz ⛽️',
           shopDescription: 'Station-service de qualité - Carburants et services',
-          backgroundImage: 'https://i.imgur.com/dRCR7PM.png',
+          backgroundImage: '', // Pas d'image de fond par défaut
           backgroundOpacity: 30, // Opacité de l'overlay (0-100)
           backgroundBlur: 3, // Blur de l'overlay (0-20)
           updatedAt: new Date()
