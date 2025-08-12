@@ -9,6 +9,7 @@ interface Product {
   name: string;
   farm: string;
   category: string;
+  menu: string;
   image: string;
   images?: string[];
   video?: string;
@@ -28,6 +29,7 @@ export default function ProductsManager() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [farms, setFarms] = useState<string[]>([]);
+  const [menus, setMenus] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -35,6 +37,7 @@ export default function ProductsManager() {
     name: '',
     farm: '',
     category: '',
+    menu: 'caligaz',
     image: '',
     images: [],
     video: '',
@@ -102,6 +105,19 @@ export default function ProductsManager() {
         console.error('❌ Erreur farms:', farmsRes.status);
         setFarms([]);
       }
+
+      // Charger les menus
+      console.log('📋 Chargement des menus...');
+      const menusRes = await fetch('/api/menus');
+      console.log('📋 Réponse menus:', menusRes.status);
+      if (menusRes.ok) {
+        const menusData = await menusRes.json();
+        console.log('📋 Menus chargés:', menusData.length, menusData);
+        setMenus(menusData);
+      } else {
+        console.error('❌ Erreur menus:', menusRes.status);
+        setMenus([{ slug: 'caligaz', name: 'CaliGaz', emoji: '⛽' }]); // Menu par défaut
+      }
       
       console.log('✅ Chargement terminé avec succès');
     } catch (error) {
@@ -110,6 +126,7 @@ export default function ProductsManager() {
       setProducts([]);
       setCategories([]);
       setFarms([]);
+      setMenus([{ slug: 'caligaz', name: 'CaliGaz', emoji: '⛽' }]);
     } finally {
       setLoading(false);
       console.log('🏁 Loading mis à false');
@@ -994,6 +1011,21 @@ export default function ProductsManager() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Menu</label>
+                  <select
+                    value={formData.menu || 'caligaz'}
+                    onChange={(e) => updateField('menu', e.target.value)}
+                    className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  >
+                    {menus.map((menu) => (
+                      <option key={menu.slug} value={menu.slug}>
+                        {menu.emoji} {menu.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Catégorie</label>
                   <select
                     value={formData.category || ''}
@@ -1268,6 +1300,21 @@ export default function ProductsManager() {
                         className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
                         placeholder="COOKIES GELATO"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Menu</label>
+                      <select
+                        value={formData.menu || 'caligaz'}
+                        onChange={(e) => updateField('menu', e.target.value)}
+                        className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
+                      >
+                        {menus.map((menu) => (
+                          <option key={menu.slug} value={menu.slug}>
+                            {menu.emoji} {menu.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div>

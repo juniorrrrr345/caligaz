@@ -3,6 +3,7 @@ interface Product {
   name: string;
   farm: string;
   category: string;
+  menu?: string;
   image: string;
   images?: string[];
   video?: string;

@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import contentCache from '@/lib/contentCache';
 import { useCartStore } from '@/lib/cartStore';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, ChevronDown } from 'lucide-react';
+import { useMenu } from '@/contexts/MenuContext';
 
 interface Settings {
   shopTitle: string;
@@ -12,9 +13,14 @@ interface Settings {
   scrollingText: string;
 }
 
-export default function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export default function Header({ onMenuClick }: HeaderProps = {}) {
   const { getTotalItems, setIsOpen } = useCartStore();
   const totalItems = getTotalItems();
+  const { selectedMenu, menus } = useMenu();
   
   // Forcer les données du cache instantané - JAMAIS d'ancien contenu
   // Header instantané depuis localStorage
@@ -111,6 +117,18 @@ export default function Header() {
       {/* Logo boutique avec bouton panier - responsive optimisé */}
       <div className="bg-black/30 backdrop-blur-md py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6 text-center border-b border-white/10 relative">
         {/* Bouton panier en position absolue */}
+        {/* Bouton de sélection de menu */}
+        {menus && menus.length > 1 && selectedMenu && onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            className="absolute left-3 sm:left-4 md:left-6 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 border border-white/30 text-sm"
+          >
+            <span>{selectedMenu.emoji}</span>
+            <span className="hidden sm:inline">{selectedMenu.name}</span>
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        )}
+
         <button
           onClick={() => setIsOpen(true)}
           className="absolute right-3 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 sm:p-3 rounded-lg transition-all duration-200 flex items-center gap-2 border border-white/30"

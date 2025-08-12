@@ -7,13 +7,18 @@ import CategoryFilter from '../components/CategoryFilter';
 import ProductCard, { Product } from '../components/ProductCard';
 import ProductDetail from '../components/ProductDetail';
 import BottomNav from '../components/BottomNav';
+import MenuSelector from '../components/MenuSelector';
+import { MenuProvider, useMenu } from '../contexts/MenuContext';
 import contentCache from '../lib/contentCache';
-export default function HomePage() {
+
+function HomePageContent() {
   const [selectedCategory, setSelectedCategory] = useState('Toutes les catégories');
   const [selectedFarm, setSelectedFarm] = useState('Toutes les farms');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeTab, setActiveTab] = useState('menu');
+  const [showMenuSelector, setShowMenuSelector] = useState(false);
   const router = useRouter();
+  const { selectedMenu, loading: menuLoading } = useMenu();
   
   // Précharger les autres pages pour navigation instantanée
   useEffect(() => {
@@ -196,9 +201,10 @@ export default function HomePage() {
 
   // Filtrage des produits
   const filteredProducts = products.filter(product => {
+    const menuMatch = !selectedMenu || product.menu === selectedMenu.slug || (!product.menu && selectedMenu.slug === 'caligaz');
     const categoryMatch = selectedCategory === 'Toutes les catégories' || product.category === selectedCategory;
     const farmMatch = selectedFarm === 'Toutes les farms' || product.farm === selectedFarm;
-    return categoryMatch && farmMatch;
+    return menuMatch && categoryMatch && farmMatch;
   });
 
   const handleTabChange = (tabId: string) => {
@@ -216,8 +222,13 @@ export default function HomePage() {
     }
   };
 
+  // Afficher le sélecteur de menu si aucun menu n'est sélectionné ou si demandé
+  if (showMenuSelector || (!selectedMenu && !menuLoading)) {
+    return <MenuSelector onMenuSelected={() => setShowMenuSelector(false)} />;
+  }
+
   // Écran de chargement avec fond de thème de la boutique
-  if (loading) {
+  if (loading || menuLoading) {
     return (
       <div className="main-container">
         <div className="global-overlay"></div>
@@ -280,7 +291,7 @@ export default function HomePage() {
       
       {/* Contenu principal avec navigation */}
       <div className="content-layer">
-        <Header />
+        <Header onMenuClick={() => setShowMenuSelector(true)} />
         
         {/* Ajouter un padding-top pour compenser le header fixe */}
         <div className="pt-24 sm:pt-28 md:pt-32">
@@ -329,5 +340,13 @@ export default function HomePage() {
       {/* BottomNav toujours visible - en dehors du content-layer */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <MenuProvider>
+      <HomePageContent />
+    </MenuProvider>
   );
 }
