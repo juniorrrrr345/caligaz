@@ -26,8 +26,13 @@ export default function MenuSelector({ onMenuSelected }: MenuSelectorProps) {
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
+    <div className="main-container">
+      {/* Overlay global toujours présent */}
+      <div className="global-overlay"></div>
+      
+      {/* Contenu principal */}
+      <div className="content-layer min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-4xl w-full">
         {/* Logo */}
         <div className="text-center mb-12">
           <img 
@@ -99,6 +104,7 @@ export default function MenuSelector({ onMenuSelected }: MenuSelectorProps) {
           <p className="text-gray-500 text-sm">
             Vous pourrez changer de menu à tout moment depuis le menu principal
           </p>
+          </div>
         </div>
       </div>
     </div>
