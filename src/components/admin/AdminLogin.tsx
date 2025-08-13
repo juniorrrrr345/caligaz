@@ -7,6 +7,7 @@ interface AdminLoginProps {
 
 export default function AdminLogin({ onLogin }: AdminLoginProps) {
   
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,20 +18,22 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
     setError('');
 
     try {
-      const response = await fetch('/api/admin/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
+        // Stocker le vrai token JWT
+        localStorage.setItem('adminToken', data.token);
         onLogin(true);
       } else {
-        setError(data.message || 'Mot de passe incorrect');
+        setError(data.message || 'Identifiants incorrects');
         onLogin(false);
       }
     } catch (error) {
@@ -57,6 +60,21 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
           </h2>
 
           <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-gray-800/80 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent backdrop-blur-sm"
+                placeholder="admin@caligaz.com"
+                required
+              />
+            </div>
+
             <div className="mb-6">
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Mot de passe
@@ -67,7 +85,7 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-gray-800/80 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent backdrop-blur-sm"
-                placeholder="Entrez le mot de passe admin"
+                placeholder="••••••••"
                 required
               />
             </div>

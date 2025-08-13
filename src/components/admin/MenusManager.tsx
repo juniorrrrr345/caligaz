@@ -55,11 +55,14 @@ export default function MenusManager() {
     }
 
     try {
+      const token = localStorage.getItem('adminToken');
+      console.log('Token pour création menu:', token ? 'Présent' : 'Absent');
+      
       const response = await fetch('/api/menus', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(newMenu)
       });
@@ -96,16 +99,29 @@ export default function MenusManager() {
     }
 
     try {
-      const { _id, ...menuData } = editingMenu;
+      const token = localStorage.getItem('adminToken');
+      console.log('Token pour mise à jour menu:', token ? 'Présent' : 'Absent');
+      console.log('Données à envoyer:', {
+        id: editingMenu._id,
+        name: editingMenu.name,
+        description: editingMenu.description,
+        emoji: editingMenu.emoji
+      });
+      
       const response = await fetch('/api/menus', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          id: _id,
-          ...menuData
+          id: editingMenu._id,
+          name: editingMenu.name,
+          description: editingMenu.description,
+          emoji: editingMenu.emoji,
+          slug: editingMenu.slug,
+          isActive: editingMenu.isActive,
+          order: editingMenu.order
         })
       });
 

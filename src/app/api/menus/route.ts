@@ -21,8 +21,11 @@ export async function GET() {
 // POST - Créer un nouveau menu (Admin seulement)
 export async function POST(req: NextRequest) {
   try {
+    console.log('POST /api/menus - Headers:', req.headers.get('authorization'));
     const authResult = await verifyAuth(req);
+    console.log('Auth result:', authResult);
     if (!authResult.isAuthenticated) {
+      console.log('Non autorisé - pas de token valide');
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
@@ -59,13 +62,18 @@ export async function POST(req: NextRequest) {
 // PUT - Mettre à jour un menu (Admin seulement)
 export async function PUT(req: NextRequest) {
   try {
+    console.log('PUT /api/menus - Headers:', req.headers.get('authorization'));
     const authResult = await verifyAuth(req);
+    console.log('Auth result:', authResult);
     if (!authResult.isAuthenticated) {
+      console.log('Non autorisé - pas de token valide');
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
     await connectDB();
-    const { id, ...data } = await req.json();
+    const body = await req.json();
+    console.log('Body reçu:', body);
+    const { id, ...data } = body;
     
     if (!id) {
       return NextResponse.json(

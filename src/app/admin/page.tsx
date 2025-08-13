@@ -44,7 +44,7 @@ export default function AdminPage() {
 
   const handleLogin = (success: boolean) => {
     if (success) {
-      localStorage.setItem('adminToken', 'authenticated');
+      // Le token JWT est déjà stocké par AdminLogin
       setIsAuthenticated(true);
     }
   };
