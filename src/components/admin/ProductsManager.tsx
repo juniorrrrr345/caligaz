@@ -79,7 +79,7 @@ export default function ProductsManager() {
         setProducts([]); // Fallback to empty array
       }
 
-      // Charger les catégories
+      // Charger les catégories (toutes ou par menu si spécifié)
       console.log('🏷️ Chargement des catégories...');
       const categoriesRes = await fetch('/api/categories');
       console.log('🏷️ Réponse catégories:', categoriesRes.status);
@@ -92,7 +92,7 @@ export default function ProductsManager() {
         setCategories([]);
       }
 
-      // Charger les farms
+      // Charger les farms (toutes ou par menu si spécifié)
       console.log('🏭 Chargement des farms...');
       const farmsRes = await fetch('/api/farms');
       console.log('🏭 Réponse farms:', farmsRes.status);

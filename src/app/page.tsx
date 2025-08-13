@@ -20,6 +20,34 @@ function HomePageContent() {
   const router = useRouter();
   const { selectedMenu, loading: menuLoading } = useMenu();
   
+  // Recharger les catégories et farms quand le menu change
+  useEffect(() => {
+    if (selectedMenu) {
+      const loadMenuData = async () => {
+        try {
+          const [categoriesRes, farmsRes] = await Promise.all([
+            fetch(`/api/categories?menu=${selectedMenu.slug}`, { cache: 'no-store' }),
+            fetch(`/api/farms?menu=${selectedMenu.slug}`, { cache: 'no-store' })
+          ]);
+          
+          if (categoriesRes.ok) {
+            const categoriesData = await categoriesRes.json();
+            setCategories(['Toutes les catégories', ...categoriesData.map((c: any) => c.name)]);
+          }
+          
+          if (farmsRes.ok) {
+            const farmsData = await farmsRes.json();
+            setFarms(['Toutes les farms', ...farmsData.map((f: any) => f.name)]);
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement des données du menu:', error);
+        }
+      };
+      
+      loadMenuData();
+    }
+  }, [selectedMenu]);
+  
   // Précharger les autres pages pour navigation instantanée
   useEffect(() => {
     router.prefetch('/info');
@@ -117,10 +145,13 @@ function HomePageContent() {
           // 2. Charger les données fraîches en arrière-plan
       const loadFreshData = async () => {
         try {
+          // Récupérer le menu sélectionné depuis le contexte ou localStorage
+          const menuSlug = selectedMenu?.slug || localStorage.getItem('selectedMenuSlug') || 'caligaz';
+          
           const [productsRes, categoriesRes, farmsRes] = await Promise.all([
             fetch('/api/products', { cache: 'no-store' }),
-            fetch('/api/categories', { cache: 'no-store' }),
-            fetch('/api/farms', { cache: 'no-store' })
+            fetch(`/api/categories?menu=${menuSlug}`, { cache: 'no-store' }),
+            fetch(`/api/farms?menu=${menuSlug}`, { cache: 'no-store' })
           ]);
 
         if (productsRes.ok) {

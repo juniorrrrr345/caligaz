@@ -1,11 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb-fixed';
-import Category from '@/models/Category';
+import { Category } from '@/lib/models/Category';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectDB();
-    const categories = await Category.find({ isActive: true }).sort({ order: 1, name: 1 });
+    
+    // Récupérer le menu depuis les query params
+    const { searchParams } = new URL(req.url);
+    const menu = searchParams.get('menu') || 'caligaz';
+    
+    console.log('Récupération des catégories pour le menu:', menu);
+    
+    // Filtrer les catégories par menu
+    const categories = await Category.find({ 
+      menu: menu,
+      isActive: true 
+    }).sort({ order: 1, name: 1 });
     
     // Headers pour éviter le cache et assurer la synchronisation instantanée
     return NextResponse.json(categories, {
