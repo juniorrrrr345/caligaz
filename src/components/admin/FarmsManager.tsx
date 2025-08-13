@@ -47,8 +47,8 @@ export default function FarmsManager() {
         setMenus(menusData);
       }
 
-      // Charger toutes les farms
-      const farmsRes = await fetch('/api/farms');
+      // Charger TOUTES les farms (sans filtre par menu)
+      const farmsRes = await fetch('/api/farms/all');
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
         setFarms(farmsData);

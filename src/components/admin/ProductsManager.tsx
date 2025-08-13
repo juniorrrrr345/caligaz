@@ -56,10 +56,47 @@ export default function ProductsManager() {
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [menuCategories, setMenuCategories] = useState<string[]>([]);
+  const [menuFarms, setMenuFarms] = useState<string[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Charger les catégories et farms quand le menu du formulaire change
+  useEffect(() => {
+    if (formData.menu) {
+      loadCategoriesAndFarmsByMenu(formData.menu);
+    }
+  }, [formData.menu]);
+
+  const loadCategoriesAndFarmsByMenu = async (menu: string) => {
+    try {
+      console.log(`🔄 Chargement des catégories et farms pour le menu: ${menu}`);
+      
+      // Charger les catégories du menu sélectionné
+      const categoriesRes = await fetch(`/api/categories?menu=${menu}`);
+      if (categoriesRes.ok) {
+        const categoriesData = await categoriesRes.json();
+        setMenuCategories(categoriesData.map((c: { name: string }) => c.name));
+        console.log(`✅ Catégories du menu ${menu}:`, categoriesData.map((c: { name: string }) => c.name));
+      } else {
+        setMenuCategories([]);
+      }
+
+      // Charger les farms du menu sélectionné
+      const farmsRes = await fetch(`/api/farms?menu=${menu}`);
+      if (farmsRes.ok) {
+        const farmsData = await farmsRes.json();
+        setMenuFarms(farmsData.map((f: { name: string }) => f.name));
+        console.log(`✅ Farms du menu ${menu}:`, farmsData.map((f: { name: string }) => f.name));
+      } else {
+        setMenuFarms([]);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des catégories/farms par menu:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -1033,7 +1070,7 @@ export default function ProductsManager() {
                     className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
                   >
                     <option value="">Sélectionner une catégorie</option>
-                    {categories.map((category) => (
+                    {menuCategories.map((category) => (
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
@@ -1047,7 +1084,7 @@ export default function ProductsManager() {
                     className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
                   >
                     <option value="">Sélectionner une farm</option>
-                    {farms.map((farm) => (
+                    {menuFarms.map((farm) => (
                       <option key={farm} value={farm}>{farm}</option>
                     ))}
                   </select>
@@ -1327,7 +1364,7 @@ export default function ProductsManager() {
                         className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
                       >
                         <option value="">Sélectionner une catégorie</option>
-                        {categories.map((category) => (
+                        {menuCategories.map((category) => (
                           <option key={category} value={category}>{category}</option>
                         ))}
                       </select>
@@ -1341,7 +1378,7 @@ export default function ProductsManager() {
                         className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
                       >
                         <option value="">Sélectionner une farm</option>
-                        {farms.map((farm) => (
+                        {menuFarms.map((farm) => (
                           <option key={farm} value={farm}>{farm}</option>
                         ))}
                       </select>

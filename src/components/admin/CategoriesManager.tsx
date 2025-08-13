@@ -48,8 +48,8 @@ export default function CategoriesManager() {
         setMenus(menusData);
       }
 
-      // Charger toutes les catégories
-      const categoriesRes = await fetch('/api/categories');
+      // Charger TOUTES les catégories (sans filtre par menu)
+      const categoriesRes = await fetch('/api/categories/all');
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
         setCategories(categoriesData);
