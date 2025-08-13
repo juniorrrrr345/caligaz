@@ -70,7 +70,7 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-gray-800/80 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent backdrop-blur-sm"
-                placeholder="admin@caligaz.com"
+                placeholder="Entrez votre email"
                 required
               />
             </div>
