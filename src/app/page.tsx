@@ -222,11 +222,6 @@ function HomePageContent() {
     }
   };
 
-  // Afficher le sélecteur de menu si aucun menu n'est sélectionné ou si demandé
-  if (showMenuSelector || (!selectedMenu && !menuLoading)) {
-    return <MenuSelector onMenuSelected={() => setShowMenuSelector(false)} />;
-  }
-
   // Écran de chargement avec fond de thème de la boutique
   if (loading || menuLoading) {
     return (
@@ -279,6 +274,10 @@ function HomePageContent() {
     );
   }
 
+  // Afficher le sélecteur de menu après le chargement si aucun menu n'est sélectionné ou si demandé
+  if (showMenuSelector || (!selectedMenu && !menuLoading && !loading)) {
+    return <MenuSelector onMenuSelected={() => setShowMenuSelector(false)} />;
+  }
 
 
 

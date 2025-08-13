@@ -1,5 +1,6 @@
 'use client';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { appEvents, EVENTS } from '@/lib/events';
 
 interface Menu {
   _id: string;
@@ -16,6 +17,7 @@ interface MenuContextType {
   selectedMenu: Menu | null;
   selectMenu: (menu: Menu) => void;
   loading: boolean;
+  refreshMenus: () => Promise<void>;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
@@ -27,6 +29,18 @@ export function MenuProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchMenus();
+    
+    // Écouter les événements de mise à jour des menus
+    const handleMenusUpdate = () => {
+      console.log('📋 Événement MENUS_UPDATED reçu, rechargement...');
+      fetchMenus();
+    };
+    
+    appEvents.on(EVENTS.MENUS_UPDATED, handleMenusUpdate);
+    
+    return () => {
+      appEvents.off(EVENTS.MENUS_UPDATED, handleMenusUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -72,8 +86,12 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('selectedMenuSlug', menu.slug);
   };
 
+  const refreshMenus = async () => {
+    await fetchMenus();
+  };
+
   return (
-    <MenuContext.Provider value={{ menus, selectedMenu, selectMenu, loading }}>
+    <MenuContext.Provider value={{ menus, selectedMenu, selectMenu, loading, refreshMenus }}>
       {children}
     </MenuContext.Provider>
   );

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Menu as MenuIcon, GripVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { appEvents, EVENTS } from '@/lib/events';
 
 interface Menu {
   _id?: string;
@@ -76,6 +77,8 @@ export default function MenusManager() {
         });
         setIsCreating(false);
         toast.success('Menu créé avec succès');
+        // Émettre l'événement pour rafraîchir les menus côté client
+        appEvents.emit(EVENTS.MENUS_UPDATED);
       } else {
         const error = await response.json();
         toast.error(error.error || 'Erreur lors de la création');
@@ -99,7 +102,10 @@ export default function MenusManager() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         },
-        body: JSON.stringify(editingMenu)
+        body: JSON.stringify({
+          id: editingMenu._id,
+          ...editingMenu
+        })
       });
 
       if (response.ok) {
@@ -107,6 +113,8 @@ export default function MenusManager() {
         setMenus(menus.map(m => m._id === updatedMenu._id ? updatedMenu : m));
         setEditingMenu(null);
         toast.success('Menu mis à jour avec succès');
+        // Émettre l'événement pour rafraîchir les menus côté client
+        appEvents.emit(EVENTS.MENUS_UPDATED);
       } else {
         toast.error('Erreur lors de la mise à jour');
       }
@@ -132,6 +140,8 @@ export default function MenusManager() {
       if (response.ok) {
         setMenus(menus.filter(m => m._id !== id));
         toast.success('Menu supprimé avec succès');
+        // Émettre l'événement pour rafraîchir les menus côté client
+        appEvents.emit(EVENTS.MENUS_UPDATED);
       } else {
         const error = await response.json();
         toast.error(error.error || 'Erreur lors de la suppression');
