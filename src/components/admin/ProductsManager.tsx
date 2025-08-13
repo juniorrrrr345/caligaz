@@ -7,7 +7,6 @@ import CloudinaryDirectUploader from './CloudinaryDirectUploader';
 interface Product {
   _id?: string;
   name: string;
-  farm: string;
   category: string;
   menu: string;
   image: string;
@@ -28,14 +27,12 @@ const defaultPriceKeys = ['3g', '5g', '10g', '25g', '50g', '100g', '200g', '500g
 export default function ProductsManager() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [farms, setFarms] = useState<string[]>([]);
   const [menus, setMenus] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
-    farm: '',
     category: '',
     menu: 'caligaz',
     image: '',
@@ -93,18 +90,7 @@ export default function ProductsManager() {
         setCategories([]);
       }
 
-      // Charger les farms
-      console.log('🏭 Chargement des farms...');
-      const farmsRes = await fetch('/api/farms');
-      console.log('🏭 Réponse farms:', farmsRes.status);
-      if (farmsRes.ok) {
-        const farmsData = await farmsRes.json();
-        console.log('🏭 Farms chargées:', farmsData.length, farmsData);
-        setFarms(farmsData.map((f: { name: string }) => f.name));
-      } else {
-        console.error('❌ Erreur farms:', farmsRes.status);
-        setFarms([]);
-      }
+
 
       // Charger les menus
       console.log('📋 Chargement des menus...');
@@ -125,7 +111,6 @@ export default function ProductsManager() {
       // En cas d'erreur, on s'assure que loading devient false
       setProducts([]);
       setCategories([]);
-      setFarms([]);
       setMenus([{ slug: 'caligaz', name: 'CaliGaz', emoji: '⛽' }]);
     } finally {
       setLoading(false);
@@ -176,8 +161,8 @@ export default function ProductsManager() {
     // Commencer avec un produit complètement vide mais garder les champs
     setFormData({
       name: '',
-      farm: '',
       category: '',
+      menu: 'caligaz',
       image: '',
       video: '',
       prices: {},
@@ -237,7 +222,7 @@ export default function ProductsManager() {
   const handleSave = async () => {
     console.log('🔵 Bouton sauvegarder cliqué');
     
-    if (!formData.name || !formData.farm || !formData.category) {
+    if (!formData.name || !formData.menu || !formData.category) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -735,7 +720,7 @@ export default function ProductsManager() {
     );
   }
 
-  console.log('🎯 Rendu ProductsManager - Produits:', products.length, 'Catégories:', categories.length, 'Farms:', farms.length);
+  console.log('🎯 Rendu ProductsManager - Produits:', products.length, 'Catégories:', categories.length, 'Menus:', menus.length);
 
   return (
     <div className="p-4 lg:p-6">
@@ -827,7 +812,7 @@ export default function ProductsManager() {
                     {product.name}
                   </h3>
                   <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">
-                    {product.farm} • {product.category}
+                    {menus.find(m => m.slug === product.menu)?.name || product.menu} • {product.category}
                   </p>
                   
 
@@ -899,7 +884,7 @@ export default function ProductsManager() {
                 {product.name}
               </h3>
               <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">
-                {product.farm}
+                {menus.find(m => m.slug === product.menu)?.name || product.menu}
               </p>
               
               {/* Prix principaux */}
@@ -1039,19 +1024,7 @@ export default function ProductsManager() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Farm</label>
-                  <select
-                    value={formData.farm || ''}
-                    onChange={(e) => updateField('farm', e.target.value)}
-                    className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
-                  >
-                    <option value="">Sélectionner une farm</option>
-                    {farms.map((farm) => (
-                      <option key={farm} value={farm}>{farm}</option>
-                    ))}
-                  </select>
-                </div>
+
 
                 <div className="space-y-4">
                   <div>
@@ -1331,19 +1304,7 @@ export default function ProductsManager() {
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Farm</label>
-                      <select
-                        value={formData.farm || ''}
-                        onChange={(e) => updateField('farm', e.target.value)}
-                        className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
-                      >
-                        <option value="">Sélectionner une farm</option>
-                        {farms.map((farm) => (
-                          <option key={farm} value={farm}>{farm}</option>
-                        ))}
-                      </select>
-                    </div>
+
 
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>

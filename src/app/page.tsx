@@ -13,7 +13,6 @@ import contentCache from '../lib/contentCache';
 
 function HomePageContent() {
   const [selectedCategory, setSelectedCategory] = useState('Toutes les catégories');
-  const [selectedFarm, setSelectedFarm] = useState('Toutes les farms');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeTab, setActiveTab] = useState('menu');
   const [showMenuSelector, setShowMenuSelector] = useState(false);
@@ -97,21 +96,14 @@ function HomePageContent() {
     return ['Toutes les catégories'];
   };
   
-  const getInitialFarms = () => {
-    // Toujours retourner les farms par défaut pour forcer le chargement depuis l'API
-    return ['Toutes les farms'];
-  };
-  
-  const [products, setProducts] = useState<Product[]>(getInitialProducts());
+    const [products, setProducts] = useState<Product[]>(getInitialProducts());
   const [categories, setCategories] = useState<string[]>(getInitialCategories());
-  const [farms, setFarms] = useState<string[]>(getInitialFarms());
 
   // CHARGEMENT INSTANTANÉ DEPUIS LE CACHE
   useEffect(() => {
     // 1. D'abord charger depuis le cache pour affichage immédiat
     const cachedProducts = contentCache.getProducts();
     const cachedCategories = contentCache.getCategories();
-    const cachedFarms = contentCache.getFarms();
     
     if (cachedProducts.length > 0) {
       setProducts(cachedProducts);
@@ -119,17 +111,13 @@ function HomePageContent() {
     if (cachedCategories.length > 0) {
       setCategories(['Toutes les catégories', ...cachedCategories.map((c: any) => c.name)]);
     }
-    if (cachedFarms.length > 0) {
-      setFarms(['Toutes les farms', ...cachedFarms.map((f: any) => f.name)]);
-    }
     
     // 2. Charger les données fraîches en arrière-plan
     const loadFreshData = async () => {
       try {
-        const [productsRes, categoriesRes, farmsRes] = await Promise.all([
+        const [productsRes, categoriesRes] = await Promise.all([
           fetch('/api/products', { cache: 'no-store' }),
-          fetch('/api/categories', { cache: 'no-store' }),
-          fetch('/api/farms', { cache: 'no-store' })
+          fetch('/api/categories', { cache: 'no-store' })
         ]);
 
         if (productsRes.ok) {
@@ -143,68 +131,39 @@ function HomePageContent() {
           setCategories(['Toutes les catégories', ...categoriesData.map((c: any) => c.name)]);
           contentCache.updateCategories(categoriesData);
         }
-
-        if (farmsRes.ok) {
-          const farmsData = await farmsRes.json();
-          setFarms(['Toutes les farms', ...farmsData.map((f: any) => f.name)]);
-          contentCache.updateFarms(farmsData);
-        }
       } catch (error) {
-        console.error('Erreur chargement données fraîches:', error);
+        console.error('Erreur lors du chargement des données:', error);
+      } finally {
+        setLoading(false);
       }
     };
-    
+
     loadFreshData();
-    
-    // Cacher le chargement après un délai plus long pour être sûr qu'il soit visible
-    const loadingTimeout = setTimeout(() => {
-      setLoading(false);
-    }, 7000); // 7 secondes pour bien voir le chargement
-    
-    // Rafraîchir les données toutes les secondes pour synchronisation temps réel
-    const interval = setInterval(() => {
-      loadFreshData();
-    }, 1000); // 1 seconde pour synchronisation instantanée
-    
-    // Écouter les changements de paramètres
-    
-    return () => {
-      clearTimeout(loadingTimeout);
-      clearInterval(interval);
-    };
   }, []);
 
   // Écouter les mises à jour du cache
   useEffect(() => {
-    const handleCacheUpdate = (event: CustomEvent) => {
-      const { products: newProducts, categories: newCategories, farms: newFarms } = event.detail;
+    const handleCacheUpdate = (event: any) => {
+      const { products: newProducts, categories: newCategories } = event.detail;
       
-      if (newProducts) {
+      if (newProducts && newProducts.length > 0) {
         setProducts(newProducts);
       }
       
-      if (newCategories) {
+      if (newCategories && newCategories.length > 0) {
         setCategories(['Toutes les catégories', ...newCategories.map((c: any) => c.name)]);
       }
-      
-      if (newFarms) {
-        setFarms(['Toutes les farms', ...newFarms.map((f: any) => f.name)]);
-      }
     };
-    
-    window.addEventListener('cacheUpdated', handleCacheUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('cacheUpdated', handleCacheUpdate as EventListener);
-    };
+
+    window.addEventListener('cacheUpdated', handleCacheUpdate);
+    return () => window.removeEventListener('cacheUpdated', handleCacheUpdate);
   }, []);
 
   // Filtrage des produits
   const filteredProducts = products.filter(product => {
     const menuMatch = !selectedMenu || product.menu === selectedMenu.slug || (!product.menu && selectedMenu.slug === 'caligaz');
     const categoryMatch = selectedCategory === 'Toutes les catégories' || product.category === selectedCategory;
-    const farmMatch = selectedFarm === 'Toutes les farms' || product.farm === selectedFarm;
-    return menuMatch && categoryMatch && farmMatch;
+    return menuMatch && categoryMatch;
   });
 
   const handleTabChange = (tabId: string) => {
@@ -303,11 +262,8 @@ function HomePageContent() {
               <div className="pt-2">
                 <CategoryFilter
                   categories={categories}
-                  farms={farms}
                   selectedCategory={selectedCategory}
-                  selectedFarm={selectedFarm}
                   onCategoryChange={setSelectedCategory}
-                  onFarmChange={setSelectedFarm}
                 />
                 
                 <main className="pt-3 pb-24 sm:pb-28 px-3 sm:px-4 lg:px-6 xl:px-8 max-w-7xl mx-auto">

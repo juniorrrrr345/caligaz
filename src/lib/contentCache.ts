@@ -1,16 +1,9 @@
 // Cache global pour avoir les données admin instantanément disponibles
-interface CachedData {
-  settings?: any;
-  infoPage?: any;
-  contactPage?: any;
-  socialLinks?: any[];
-  products?: any[];
-  categories?: any[];
-  farms?: any[];
-  pages?: {
-    info?: { title: string; content: string };
-    contact?: { title: string; content: string };
-  };
+interface CacheData {
+  products: any[];
+  categories: any[];
+  settings: any;
+  socialLinks: any[];
 }
 
 class ContentCache {
@@ -34,26 +27,27 @@ class ContentCache {
     
     try {
       // Charger TOUT depuis l'API en parallèle
-      const [products, categories, farms, settings, socialLinks] = await Promise.all([
+      const [products, categories, settings, socialLinks] = await Promise.all([
         fetch('/api/products', { cache: 'no-store' }).then(r => r.ok ? r.json() : []),
         fetch('/api/categories', { cache: 'no-store' }).then(r => r.ok ? r.json() : []),
-        fetch('/api/farms', { cache: 'no-store' }).then(r => r.ok ? r.json() : []),
         fetch('/api/settings', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}),
         fetch('/api/social-links', { cache: 'no-store' }).then(r => r.ok ? r.json() : [])
       ]);
       
       // Mettre à jour le cache ET localStorage
-      this.data = { products, categories, farms, settings, socialLinks };
+      this.data = { products, categories, settings, socialLinks };
       
       // Sauvegarder dans localStorage pour affichage instantané
       localStorage.setItem('products', JSON.stringify(products));
       localStorage.setItem('categories', JSON.stringify(categories));
-      localStorage.setItem('farms', JSON.stringify(farms));
-      localStorage.setItem('shopSettings', JSON.stringify(settings));
+      localStorage.setItem('settings', JSON.stringify(settings));
       localStorage.setItem('socialLinks', JSON.stringify(socialLinks));
+      localStorage.setItem('cacheTimestamp', Date.now().toString());
       
       // Émettre un événement pour notifier les composants
-      window.dispatchEvent(new CustomEvent('cacheUpdated', { detail: this.data }));
+      window.dispatchEvent(new CustomEvent('cacheUpdated', { 
+        detail: { products, categories, settings, socialLinks }
+      }));
       
     } catch (error) {
       console.log('Erreur refresh cache:', error);
@@ -88,10 +82,7 @@ class ContentCache {
     return this.data.categories || [];
   }
 
-  // Obtenir les farms instantanément
-  getFarms() {
-    return this.data.farms || [];
-  }
+
 
   // Obtenir les liens sociaux
   getSocialLinks() {
@@ -150,19 +141,15 @@ class ContentCache {
 
   updateCategories(categories: any[]) {
     this.data.categories = categories;
-    // Sauvegarder aussi dans localStorage séparément pour chargement instantané
-    try {
+    if (typeof window !== 'undefined') {
       localStorage.setItem('categories', JSON.stringify(categories));
-    } catch (e) {}
+      window.dispatchEvent(new CustomEvent('cacheUpdated', { 
+        detail: { categories }
+      }));
+    }
   }
 
-  updateFarms(farms: any[]) {
-    this.data.farms = farms;
-    // Sauvegarder aussi dans localStorage séparément pour chargement instantané
-    try {
-      localStorage.setItem('farms', JSON.stringify(farms));
-    } catch (e) {}
-  }
+
 
   // Invalidate cache - force une nouvelle récupération IMMÉDIATE
   invalidate() {

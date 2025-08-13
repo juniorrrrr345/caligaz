@@ -7,8 +7,7 @@ export interface IProduct {
   price: number;
   prices?: Record<string, number>;
   category: string;
-  farm: string;
-  menu: string; // Nouveau champ pour le menu
+  menu: string; // Menu auquel appartient le produit
   image: string;
   images?: string[];
   video?: string;
@@ -36,10 +35,6 @@ const productSchema = new mongoose.Schema({
     of: Number 
   },
   category: { 
-    type: String, 
-    required: true 
-  },
-  farm: { 
     type: String, 
     required: true 
   },

@@ -44,20 +44,17 @@ export function MenuProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Restaurer le menu sélectionné depuis le localStorage
+    // Ne PAS restaurer automatiquement le menu - forcer la sélection à chaque visite
+    // Cette logique est commentée pour toujours afficher le sélecteur
+    /*
     const savedMenuSlug = localStorage.getItem('selectedMenuSlug');
     if (savedMenuSlug && menus.length > 0) {
       const menu = menus.find(m => m.slug === savedMenuSlug);
       if (menu) {
         setSelectedMenu(menu);
-      } else {
-        // Si le menu sauvegardé n'existe plus, sélectionner le premier
-        setSelectedMenu(menus[0]);
       }
-    } else if (menus.length > 0 && !selectedMenu) {
-      // Sélectionner le premier menu par défaut
-      setSelectedMenu(menus[0]);
     }
+    */
   }, [menus]);
 
   const fetchMenus = async () => {
@@ -67,12 +64,8 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         setMenus(data);
         
-        // Si aucun menu n'est sélectionné, prendre le premier
-        if (data.length > 0 && !selectedMenu) {
-          const defaultMenu = data.find((m: Menu) => m.slug === 'caligaz') || data[0];
-          setSelectedMenu(defaultMenu);
-          localStorage.setItem('selectedMenuSlug', defaultMenu.slug);
-        }
+        // Ne PAS sélectionner automatiquement un menu
+        // L'utilisateur doit choisir à chaque fois
       }
     } catch (error) {
       console.error('Erreur lors du chargement des menus:', error);

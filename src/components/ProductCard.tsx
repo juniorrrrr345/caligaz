@@ -1,7 +1,6 @@
 interface Product {
   _id: string;
   name: string;
-  farm: string;
   category: string;
   menu?: string;
   image: string;
@@ -63,7 +62,7 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
           {product.name}
         </h3>
         <p className="text-gray-400 text-xxs sm:text-xs font-medium uppercase tracking-widest break-words line-clamp-1">
-          {product.farm}
+          {product.category}
         </p>
         {/* Description du produit */}
         {product.description && (
