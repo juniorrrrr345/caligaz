@@ -7,6 +7,7 @@ export interface IProduct {
   price: number;
   prices?: Record<string, number>;
   category: string;
+  farm: string; // Farm du produit
   menu: string; // Menu auquel appartient le produit
   image: string;
   images?: string[];
@@ -37,6 +38,11 @@ const productSchema = new mongoose.Schema({
   category: { 
     type: String, 
     required: true 
+  },
+  farm: { 
+    type: String, 
+    required: true,
+    default: 'CaliGaz'
   },
   menu: { 
     type: String, 

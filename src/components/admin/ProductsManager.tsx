@@ -8,6 +8,7 @@ interface Product {
   _id?: string;
   name: string;
   category: string;
+  farm: string;
   menu: string;
   image: string;
   images?: string[];
@@ -27,6 +28,7 @@ const defaultPriceKeys = ['3g', '5g', '10g', '25g', '50g', '100g', '200g', '500g
 export default function ProductsManager() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [farms, setFarms] = useState<string[]>([]);
   const [menus, setMenus] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -34,12 +36,12 @@ export default function ProductsManager() {
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
     category: '',
+    farm: '',
     menu: 'caligaz',
     image: '',
     images: [],
     video: '',
     prices: {},
-    promotions: {},
     description: '',
     isActive: true
   });
@@ -90,7 +92,18 @@ export default function ProductsManager() {
         setCategories([]);
       }
 
-
+      // Charger les farms
+      console.log('🏭 Chargement des farms...');
+      const farmsRes = await fetch('/api/farms');
+      console.log('🏭 Réponse farms:', farmsRes.status);
+      if (farmsRes.ok) {
+        const farmsData = await farmsRes.json();
+        console.log('🏭 Farms chargées:', farmsData.length, farmsData);
+        setFarms(farmsData.map((f: { name: string }) => f.name));
+      } else {
+        console.error('❌ Erreur farms:', farmsRes.status);
+        setFarms([]);
+      }
 
       // Charger les menus
       console.log('📋 Chargement des menus...');
@@ -111,6 +124,7 @@ export default function ProductsManager() {
       // En cas d'erreur, on s'assure que loading devient false
       setProducts([]);
       setCategories([]);
+      setFarms([]);
       setMenus([{ slug: 'caligaz', name: 'CaliGaz', emoji: '⛽' }]);
     } finally {
       setLoading(false);
@@ -162,6 +176,7 @@ export default function ProductsManager() {
     setFormData({
       name: '',
       category: '',
+      farm: '',
       menu: 'caligaz',
       image: '',
       video: '',
@@ -222,7 +237,7 @@ export default function ProductsManager() {
   const handleSave = async () => {
     console.log('🔵 Bouton sauvegarder cliqué');
     
-    if (!formData.name || !formData.menu || !formData.category) {
+    if (!formData.name || !formData.farm || !formData.menu || !formData.category) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -1024,6 +1039,20 @@ export default function ProductsManager() {
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Farm</label>
+                  <select
+                    value={formData.farm || ''}
+                    onChange={(e) => updateField('farm', e.target.value)}
+                    className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  >
+                    <option value="">Sélectionner une farm</option>
+                    {farms.map((farm) => (
+                      <option key={farm} value={farm}>{farm}</option>
+                    ))}
+                  </select>
+                </div>
+
 
 
                 <div className="space-y-4">
@@ -1300,6 +1329,20 @@ export default function ProductsManager() {
                         <option value="">Sélectionner une catégorie</option>
                         {categories.map((category) => (
                           <option key={category} value={category}>{category}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Farm</label>
+                      <select
+                        value={formData.farm || ''}
+                        onChange={(e) => updateField('farm', e.target.value)}
+                        className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
+                      >
+                        <option value="">Sélectionner une farm</option>
+                        {farms.map((farm) => (
+                          <option key={farm} value={farm}>{farm}</option>
                         ))}
                       </select>
                     </div>

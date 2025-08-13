@@ -96,6 +96,7 @@ export default function MenusManager() {
     }
 
     try {
+      const { _id, ...menuData } = editingMenu;
       const response = await fetch('/api/menus', {
         method: 'PUT',
         headers: {
@@ -103,8 +104,8 @@ export default function MenusManager() {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         },
         body: JSON.stringify({
-          id: editingMenu._id,
-          ...editingMenu
+          id: _id,
+          ...menuData
         })
       });
 
