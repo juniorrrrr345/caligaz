@@ -147,8 +147,9 @@ function setupBotHandlers() {
         const chatId = msg.chat.id;
         const userId = msg.from.id;
         
-        // Sauvegarder l'utilisateur
+        // Sauvegarder l'utilisateur et marquer qu'il a démarré le bot
         await saveUser(userId, msg.from);
+        await User.updateOne({ userId }, { hasStarted: true });
         
         // NE PAS supprimer la commande /start - la laisser visible
         
@@ -740,23 +741,64 @@ async function handleBroadcastSend(chatId, userId, message) {
     
     await sendOrEditMessage(chatId, '📤 Envoi en cours...', { inline_keyboard: [] });
     
-    const users = await User.find({});
+    // Ne récupérer que les utilisateurs qui acceptent les notifications et ont démarré le bot
+    const users = await User.find({ 
+        acceptsNotifications: { $ne: false },
+        hasStarted: { $ne: false }
+    });
     let sent = 0;
     let failed = 0;
+    let startTime = Date.now();
+    
+    // Message d'information sur le processus
+    await sendOrEditMessage(chatId,
+        `📤 <b>Diffusion en cours...</b>\n\n` +
+        `Total d'utilisateurs: ${users.length}\n` +
+        `⏱️ Temps estimé: ${Math.ceil(users.length * 40 / 1000)} secondes\n\n` +
+        `<i>Merci de patienter...</i>`,
+        { inline_keyboard: [] }
+    );
     
     for (const user of users) {
         try {
             await bot.sendMessage(user.userId, message, { parse_mode: 'HTML' });
             sent++;
+            
+            // ⚠️ IMPORTANT: Respecter les limites de Telegram
+            // Pause de 40ms entre chaque message (25 messages/seconde max)
+            await new Promise(resolve => setTimeout(resolve, 40));
+            
+            // Pause supplémentaire tous les 25 messages
+            if (sent % 25 === 0) {
+                // Pause de 1 seconde tous les 25 messages
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Mise à jour du statut tous les 25 messages
+                const elapsed = Math.round((Date.now() - startTime) / 1000);
+                await sendOrEditMessage(chatId,
+                    `📤 <b>Diffusion en cours...</b>\n\n` +
+                    `• Envoyés: ${sent}/${users.length}\n` +
+                    `• Échecs: ${failed}\n` +
+                    `• Temps écoulé: ${elapsed}s\n\n` +
+                    `<i>Ne pas interrompre...</i>`,
+                    { inline_keyboard: [] }
+                );
+            }
         } catch (error) {
             failed++;
+            // L'utilisateur a probablement bloqué le bot
+            console.log(`Échec envoi à ${user.userId}:`, error.message);
         }
     }
+    
+    const totalTime = Math.round((Date.now() - startTime) / 1000);
     
     await sendOrEditMessage(chatId,
         `✅ <b>Diffusion terminée!</b>\n\n` +
         `• Messages envoyés: ${sent}\n` +
-        `• Échecs: ${failed}`,
+        `• Échecs: ${failed}\n` +
+        `• Temps total: ${totalTime}s\n` +
+        `• Vitesse: ~${Math.round(sent / totalTime)} msg/s`,
         { inline_keyboard: [[{ text: '🔙 Retour', callback_data: 'admin_back' }]] }
     );
 }

@@ -9,7 +9,9 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, default: false },
     firstSeen: { type: Date, default: Date.now },
     lastSeen: { type: Date, default: Date.now },
-    messageCount: { type: Number, default: 0 }
+    messageCount: { type: Number, default: 0 },
+    acceptsNotifications: { type: Boolean, default: true },
+    hasStarted: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // Schéma pour les images uploadées
