@@ -146,20 +146,30 @@ export default function CategoriesManager() {
       return;
     }
 
+    console.log('🗑️ Tentative de suppression de la catégorie:', id);
+
     try {
       const response = await fetch(`/api/categories/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
+
+      console.log('📊 Réponse de suppression:', response.status);
 
       if (response.ok) {
         setCategories(categories.filter(c => c._id !== id));
         toast.success('Catégorie supprimée avec succès');
+        console.log('✅ Catégorie supprimée avec succès');
       } else {
-        toast.error('Erreur lors de la suppression');
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
+        console.error('❌ Erreur de suppression:', errorData);
+        toast.error(`Erreur: ${errorData.error || 'Impossible de supprimer la catégorie'}`);
       }
     } catch (error) {
-      console.error('Erreur:', error);
-      toast.error('Erreur lors de la suppression');
+      console.error('❌ Erreur réseau:', error);
+      toast.error('Erreur de connexion au serveur');
     }
   };
 
