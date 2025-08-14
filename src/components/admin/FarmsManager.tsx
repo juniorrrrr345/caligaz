@@ -43,7 +43,13 @@ export default function FarmsManager() {
       console.log('🔄 Chargement des données...');
       
       // Charger les menus
-      const menusRes = await fetch('/api/menus');
+      const menusRes = await fetch('/api/menus', { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (menusRes.ok) {
         const menusData = await menusRes.json();
         setMenus(menusData);
@@ -51,7 +57,14 @@ export default function FarmsManager() {
       }
 
       // Charger TOUTES les farms (sans filtre par menu)
-      const farmsRes = await fetch('/api/farms/all');
+      // Ajouter un timestamp pour forcer le rechargement
+      const farmsRes = await fetch(`/api/farms/all?t=${Date.now()}`, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
         console.log('🏭 Farms chargées:', farmsData.length);

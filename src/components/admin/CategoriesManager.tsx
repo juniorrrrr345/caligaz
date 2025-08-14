@@ -40,11 +40,18 @@ export default function CategoriesManager() {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true); // Forcer le re-render
     try {
       console.log('🔄 Chargement des données...');
       
       // Charger les menus
-      const menusRes = await fetch('/api/menus');
+      const menusRes = await fetch('/api/menus', { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (menusRes.ok) {
         const menusData = await menusRes.json();
         setMenus(menusData);
@@ -52,7 +59,14 @@ export default function CategoriesManager() {
       }
 
       // Charger TOUTES les catégories (sans filtre par menu)
-      const categoriesRes = await fetch('/api/categories/all');
+      // Ajouter un timestamp pour forcer le rechargement
+      const categoriesRes = await fetch(`/api/categories/all?t=${Date.now()}`, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
         console.log('🏷️ Catégories chargées:', categoriesData.length);
