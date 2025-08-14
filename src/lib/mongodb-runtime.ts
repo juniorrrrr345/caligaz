@@ -19,7 +19,7 @@ if (!cached) {
 async function connectDB() {
   // Configuration MongoDB - URI depuis les variables d'environnement
   const MONGODB_URI = process.env.MONGODB_URI || 
-    'mongodb+srv://harigon265:reina@reina.lwzsfti.mongodb.net/reinaplug?retryWrites=true&w=majority&appName=reina';
+    'mongodb+srv://caligaz641:laVfS1ZDvnGFrQjs@caligaz.w8db4kp.mongodb.net/caligaz?retryWrites=true&w=majority&appName=caligaz';
 
   console.log('🔗 Connexion MongoDB avec URI:', MONGODB_URI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@'));
 

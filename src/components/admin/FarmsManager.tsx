@@ -136,8 +136,9 @@ export default function FarmsManager() {
         console.log('✅ Farm créée:', farm);
         toast.success('Farm créée avec succès');
         
-        // RECHARGEMENT IMMÉDIAT
-        window.location.reload();
+        // Forcer un rechargement COMPLET avec nouveau timestamp
+        const newUrl = window.location.pathname + '?t=' + Date.now();
+        window.location.href = newUrl;
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -200,8 +201,9 @@ export default function FarmsManager() {
         console.log('✅ Farm supprimée');
         toast.success('Farm supprimée avec succès');
         
-        // RECHARGEMENT IMMÉDIAT
-        window.location.reload();
+        // Forcer un rechargement COMPLET avec nouveau timestamp
+        const newUrl = window.location.pathname + '?t=' + Date.now();
+        window.location.href = newUrl;
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);

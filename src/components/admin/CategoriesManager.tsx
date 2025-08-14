@@ -129,8 +129,9 @@ export default function CategoriesManager() {
         console.log('✅ Catégorie créée:', category);
         toast.success('Catégorie créée avec succès');
         
-        // RECHARGEMENT IMMÉDIAT
-        window.location.reload();
+        // Forcer un rechargement COMPLET avec nouveau timestamp
+        const newUrl = window.location.pathname + '?t=' + Date.now();
+        window.location.href = newUrl;
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -193,8 +194,9 @@ export default function CategoriesManager() {
         console.log('✅ Catégorie supprimée');
         toast.success('Catégorie supprimée avec succès');
         
-        // RECHARGEMENT IMMÉDIAT
-        window.location.reload();
+        // Forcer un rechargement COMPLET avec nouveau timestamp
+        const newUrl = window.location.pathname + '?t=' + Date.now();
+        window.location.href = newUrl;
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);

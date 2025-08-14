@@ -1,16 +1,24 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb-fixed';
+import mongoose from 'mongoose';
+
+const MONGODB_URI = 'mongodb+srv://caligaz641:laVfS1ZDvnGFrQjs@caligaz.w8db4kp.mongodb.net/caligaz?retryWrites=true&w=majority&appName=caligaz';
 
 export async function GET() {
   try {
-    const { db } = await connectToDatabase();
+    // Forcer une nouvelle connexion
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect();
+    }
+    
+    await mongoose.connect(MONGODB_URI);
+    console.log('✅ Connecté à MongoDB pour check-db');
+
+    const db = mongoose.connection.db;
     
     // Récupérer toutes les collections
-    const [menus, categories, farms] = await Promise.all([
-      db.collection('menus').find({}).toArray(),
-      db.collection('categories').find({}).toArray(),
-      db.collection('farms').find({}).toArray()
-    ]);
+    const menus = await db.collection('menus').find({}).toArray();
+    const categories = await db.collection('categories').find({}).toArray();
+    const farms = await db.collection('farms').find({}).toArray();
     
     // Grouper les catégories par menu
     const categoriesByMenu: Record<string, any[]> = {};
