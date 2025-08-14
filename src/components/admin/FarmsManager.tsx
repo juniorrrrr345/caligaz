@@ -41,6 +41,7 @@ export default function FarmsManager() {
 
   const fetchData = async () => {
     setLoading(true); // Forcer le re-render
+    setFarms([]); // Vider les farms pour forcer React à voir le changement
     try {
       console.log('🔄 Chargement des données...');
       
@@ -73,11 +74,13 @@ export default function FarmsManager() {
         farmsData.forEach((farm: any) => {
           console.log(`  - ${farm.name} (Menu: ${farm.menu}, ID: ${farm._id})`);
         });
-        setFarms(farmsData);
-        setRefreshKey(prev => prev + 1); // Forcer le re-render complet
+        // Forcer React à voir un nouvel array
+        setFarms([...farmsData]);
+        setRefreshKey(Date.now()); // Utiliser timestamp comme clé unique
       } else {
         console.error('❌ Erreur chargement farms:', farmsRes.status);
         setFarms([]);
+        setRefreshKey(Date.now());
       }
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
@@ -120,7 +123,10 @@ export default function FarmsManager() {
         const farm = await response.json();
         console.log('✅ Farm créée:', farm);
         
-        // Recharger les données immédiatement
+        // Petit délai pour s'assurer que MongoDB a bien traité
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Recharger les données
         await fetchData();
         
         setNewFarm({
@@ -198,7 +204,10 @@ export default function FarmsManager() {
         toast.success('Farm supprimée avec succès');
         console.log('✅ Farm supprimée avec succès');
         
-        // Recharger les données immédiatement
+        // Petit délai pour s'assurer que MongoDB a bien traité
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Recharger les données
         await fetchData();
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));

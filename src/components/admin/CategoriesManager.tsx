@@ -42,6 +42,7 @@ export default function CategoriesManager() {
 
   const fetchData = async () => {
     setLoading(true); // Forcer le re-render
+    setCategories([]); // Vider les catégories pour forcer React à voir le changement
     try {
       console.log('🔄 Chargement des données...');
       
@@ -74,11 +75,13 @@ export default function CategoriesManager() {
         categoriesData.forEach((cat: any) => {
           console.log(`  - ${cat.name} (Menu: ${cat.menu}, ID: ${cat._id})`);
         });
-        setCategories(categoriesData);
-        setRefreshKey(prev => prev + 1); // Forcer le re-render complet
+        // Forcer React à voir un nouvel array
+        setCategories([...categoriesData]);
+        setRefreshKey(Date.now()); // Utiliser timestamp comme clé unique
       } else {
         console.error('❌ Erreur chargement catégories:', categoriesRes.status);
         setCategories([]);
+        setRefreshKey(Date.now());
       }
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
@@ -121,7 +124,10 @@ export default function CategoriesManager() {
         const category = await response.json();
         console.log('✅ Catégorie créée:', category);
         
-        // Recharger les données immédiatement
+        // Petit délai pour s'assurer que MongoDB a bien traité
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Recharger les données
         await fetchData();
         
         setNewCategory({
@@ -200,7 +206,10 @@ export default function CategoriesManager() {
         console.log('✅ Catégorie supprimée avec succès');
         toast.success('Catégorie supprimée avec succès');
         
-        // Recharger les données immédiatement
+        // Petit délai pour s'assurer que MongoDB a bien traité
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Recharger les données
         await fetchData();
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
