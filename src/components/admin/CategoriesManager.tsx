@@ -124,22 +124,12 @@ export default function CategoriesManager() {
         const category = await response.json();
         console.log('✅ Catégorie créée:', category);
         
-        // Petit délai pour s'assurer que MongoDB a bien traité
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Recharger les données
-        await fetchData();
-        
-        setNewCategory({
-          name: '',
-          slug: '',
-          description: '',
-          menu: 'caligaz',
-          order: categories.length,
-          isActive: true
-        });
-        setIsCreating(false);
         toast.success('Catégorie créée avec succès');
+        
+        // Solution radicale : recharger la page
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -169,11 +159,12 @@ export default function CategoriesManager() {
         const updatedCategory = await response.json();
         console.log('✅ Catégorie mise à jour:', updatedCategory);
         
-        // Recharger les données immédiatement
-        await fetchData();
-        
-        setEditingCategory(null);
         toast.success('Catégorie mise à jour avec succès');
+        
+        // Solution radicale : recharger la page
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de mise à jour:', error);
@@ -206,11 +197,10 @@ export default function CategoriesManager() {
         console.log('✅ Catégorie supprimée avec succès');
         toast.success('Catégorie supprimée avec succès');
         
-        // Petit délai pour s'assurer que MongoDB a bien traité
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Recharger les données
-        await fetchData();
+        // Solution radicale : recharger la page
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
         console.error('❌ Erreur de suppression:', errorData);
