@@ -72,14 +72,14 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: 'ID farm invalide' }, { status: 400 });
     }
     
-    const result = await farmsCollection.findOneAndDelete({ _id: new ObjectId(params.id) });
+    // Utiliser deleteOne pour plus de compatibilité
+    const result = await farmsCollection.deleteOne({ _id: new ObjectId(params.id) });
 
-    console.log('📊 Résultat findOneAndDelete:', result);
+    console.log('📊 Résultat deleteOne:', result);
 
-    if (!result.value) {
-      console.log('⚠️ Farm déjà supprimée ou inexistante');
-      // Ce n'est pas une erreur - la farm est peut-être déjà supprimée
-      return NextResponse.json({ message: 'Farm déjà supprimée' });
+    if (result.deletedCount === 0) {
+      console.log('⚠️ Farm non trouvée ou déjà supprimée');
+      return NextResponse.json({ message: 'Farm non trouvée' }, { status: 404 });
     }
 
     console.log('✅ Farm supprimée avec succès');

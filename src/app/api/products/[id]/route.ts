@@ -162,28 +162,33 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     console.log('🔍 Produit existant trouvé:', existingProduct ? 'OUI' : 'NON');
     
     if (!existingProduct) {
-      console.log('⚠️ Produit déjà supprimé ou inexistant avec ID:', params.id);
-      // Ce n'est pas une erreur si le produit n'existe pas - il est peut-être déjà supprimé
+      console.log('⚠️ Produit non trouvé avec ID:', params.id);
       return NextResponse.json({ 
-        message: 'Produit déjà supprimé', 
+        message: 'Produit non trouvé', 
         productId: params.id 
-      });
+      }, { status: 404 });
     }
     
     console.log('✅ Produit existe, tentative suppression...');
-    const result = await productsCollection.findOneAndDelete({ _id: objectId });
+    
+    // Utiliser deleteOne pour plus de compatibilité
+    const result = await productsCollection.deleteOne({ _id: objectId });
 
-    if (!result.value) {
-      console.log('⚠️ Produit supprimé entre temps pour ID:', params.id);
-      // Pas une erreur - le produit a été supprimé entre temps
+    console.log('📊 Résultat deleteOne:', result);
+
+    if (result.deletedCount === 0) {
+      console.log('⚠️ Impossible de supprimer le produit');
       return NextResponse.json({ 
-        message: 'Produit supprimé', 
+        error: 'Impossible de supprimer le produit', 
         productId: params.id 
-      });
+      }, { status: 500 });
     }
 
-    console.log('✅ Produit supprimé avec succès:', result.value.name);
-    return NextResponse.json({ message: 'Produit supprimé avec succès', productName: result.value.name });
+    console.log('✅ Produit supprimé avec succès:', existingProduct.name);
+    return NextResponse.json({ 
+      message: 'Produit supprimé avec succès', 
+      productName: existingProduct.name 
+    });
   } catch (error) {
     console.error('❌ Erreur lors de la suppression:', error);
     return NextResponse.json({ 

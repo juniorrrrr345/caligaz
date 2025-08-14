@@ -72,14 +72,14 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: 'ID catégorie invalide' }, { status: 400 });
     }
     
-    const result = await categoriesCollection.findOneAndDelete({ _id: new ObjectId(params.id) });
+    // Utiliser deleteOne pour plus de compatibilité
+    const result = await categoriesCollection.deleteOne({ _id: new ObjectId(params.id) });
 
-    console.log('📊 Résultat findOneAndDelete:', result);
+    console.log('📊 Résultat deleteOne:', result);
 
-    if (!result.value) {
-      console.log('⚠️ Catégorie déjà supprimée ou inexistante');
-      // Ce n'est pas une erreur - la catégorie est peut-être déjà supprimée
-      return NextResponse.json({ message: 'Catégorie déjà supprimée' });
+    if (result.deletedCount === 0) {
+      console.log('⚠️ Catégorie non trouvée ou déjà supprimée');
+      return NextResponse.json({ message: 'Catégorie non trouvée' }, { status: 404 });
     }
 
     console.log('✅ Catégorie supprimée avec succès');
