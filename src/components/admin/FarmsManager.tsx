@@ -40,47 +40,84 @@ export default function FarmsManager() {
   }, []);
 
   const fetchData = async () => {
-    setLoading(true); // Forcer le re-render
-    setFarms([]); // Vider les farms pour forcer React à voir le changement
+    setLoading(true);
+    setFarms([]); // Vider complètement
+    
     try {
-      console.log('🔄 Chargement des données...');
+      console.log('🔄 Chargement FORCÉ des données...');
+      
+      // FORCER le rechargement en utilisant l'API directement
+      // sans passer par Mongoose
+      const timestamp = Date.now();
       
       // Charger les menus
-      const menusRes = await fetch('/api/menus', { 
+      const menusRes = await fetch(`/api/menus?_t=${timestamp}&nocache=${Math.random()}`, { 
+        method: 'GET',
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
+      
       if (menusRes.ok) {
         const menusData = await menusRes.json();
-        setMenus(menusData);
-        console.log('📋 Menus chargés:', menusData.length);
+        console.log('📋 Menus chargés:', menusData);
+        setMenus([...menusData]); // Créer un nouveau tableau
       }
 
-      // Charger TOUTES les farms (sans filtre par menu)
-      // Ajouter un timestamp pour forcer le rechargement
-      const farmsRes = await fetch(`/api/farms/all?t=${Date.now()}`, { 
+      // Utiliser l'API de debug pour récupérer TOUTES les farms directement depuis MongoDB
+      const debugRes = await fetch(`/api/check-db?_t=${timestamp}&nocache=${Math.random()}`, {
+        method: 'GET',
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
-      if (farmsRes.ok) {
-        const farmsData = await farmsRes.json();
-        console.log('🏭 Farms chargées:', farmsData.length);
-        farmsData.forEach((farm: any) => {
-          console.log(`  - ${farm.name} (Menu: ${farm.menu}, ID: ${farm._id})`);
+      
+      if (debugRes.ok) {
+        const debugData = await debugRes.json();
+        console.log('🔍 Données MongoDB directes:', debugData);
+        
+        // Extraire toutes les farms de tous les menus
+        const allFarms: Farm[] = [];
+        Object.entries(debugData.farmsByMenu).forEach(([menu, farms]: [string, any]) => {
+          farms.forEach((farm: any) => {
+            allFarms.push({
+              _id: farm._id,
+              name: farm.name,
+              slug: farm.slug || farm.name.toLowerCase().replace(/\s+/g, '-'),
+              menu: farm.menu || menu,
+              order: farm.order || 0,
+              isActive: farm.isActive !== false
+            });
+          });
         });
-        // Forcer React à voir un nouvel array
-        setFarms([...farmsData]);
-        setRefreshKey(Date.now()); // Utiliser timestamp comme clé unique
-      } else {
-        console.error('❌ Erreur chargement farms:', farmsRes.status);
-        setFarms([]);
+        
+        console.log('✅ Farms extraites:', allFarms);
+        setFarms([...allFarms]); // Forcer un nouveau tableau
         setRefreshKey(Date.now());
+      } else {
+        // Fallback sur l'ancienne méthode
+        const farmsRes = await fetch(`/api/farms/all?_t=${timestamp}&nocache=${Math.random()}`, { 
+          method: 'GET',
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        
+        if (farmsRes.ok) {
+          const farmsData = await farmsRes.json();
+          console.log('🏭 Farms depuis API normale:', farmsData);
+          setFarms([...farmsData]);
+          setRefreshKey(Date.now());
+        }
       }
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
