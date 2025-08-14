@@ -26,10 +26,11 @@ function HomePageContent() {
     if (!selectedMenu) return;
     
     try {
+      const timestamp = Date.now();
       const [productsRes, categoriesRes, farmsRes] = await Promise.all([
-        fetch(`/api/products?menu=${selectedMenu.slug}`, { cache: 'no-store' }),
-        fetch(`/api/categories?menu=${selectedMenu.slug}`, { cache: 'no-store' }),
-        fetch(`/api/farms?menu=${selectedMenu.slug}`, { cache: 'no-store' })
+        fetch(`/api/products?menu=${selectedMenu.slug}&t=${timestamp}`, { cache: 'no-store' }),
+        fetch(`/api/categories?menu=${selectedMenu.slug}&t=${timestamp}`, { cache: 'no-store' }),
+        fetch(`/api/farms?menu=${selectedMenu.slug}&t=${timestamp}`, { cache: 'no-store' })
       ]);
       
       if (productsRes.ok) {

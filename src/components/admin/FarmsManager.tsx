@@ -25,6 +25,7 @@ export default function FarmsManager() {
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0); // Pour forcer le re-render
 
   const [newFarm, setNewFarm] = useState<Farm>({
     name: '',
@@ -73,8 +74,10 @@ export default function FarmsManager() {
           console.log(`  - ${farm.name} (Menu: ${farm.menu}, ID: ${farm._id})`);
         });
         setFarms(farmsData);
+        setRefreshKey(prev => prev + 1); // Forcer le re-render complet
       } else {
         console.error('❌ Erreur chargement farms:', farmsRes.status);
+        setFarms([]);
       }
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
@@ -313,11 +316,11 @@ export default function FarmsManager() {
       )}
 
       {/* Liste des farms groupées par menu */}
-      <div className="space-y-6">
+      <div className="space-y-6" key={refreshKey}>
         {Object.entries(farmsByMenu).map(([menuSlug, menuFarms]) => {
           const menu = menus.find(m => m.slug === menuSlug);
           return (
-            <div key={menuSlug} className="bg-gray-800/50 rounded-lg p-4 border border-white/10">
+            <div key={`${menuSlug}-${refreshKey}`} className="bg-gray-800/50 rounded-lg p-4 border border-white/10">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 {menu ? (
                   <>
