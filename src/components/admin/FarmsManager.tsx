@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Home } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { appEvents, EVENTS } from '@/lib/events';
 
 interface Farm {
   _id?: string;
@@ -115,6 +116,8 @@ export default function FarmsManager() {
         });
         setIsCreating(false);
         toast.success('Farm créée avec succès');
+        // Émettre l'événement pour rafraîchir les farms côté client
+        appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -149,6 +152,8 @@ export default function FarmsManager() {
         
         setEditingFarm(null);
         toast.success('Farm mise à jour avec succès');
+        // Émettre l'événement pour rafraîchir les farms côté client
+        appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de mise à jour:', error);
@@ -182,6 +187,8 @@ export default function FarmsManager() {
         await fetchData();
         toast.success('Farm supprimée avec succès');
         console.log('✅ Farm supprimée avec succès');
+        // Émettre l'événement pour rafraîchir les farms côté client
+        appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
         console.error('❌ Erreur de suppression:', errorData);

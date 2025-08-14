@@ -10,6 +10,7 @@ import BottomNav from '../components/BottomNav';
 import MenuSelector from '@/components/MenuSelector';
 import { MenuProvider, useMenu } from '@/contexts/MenuContext';
 import contentCache from '../lib/contentCache';
+import { appEvents, EVENTS } from '@/lib/events';
 
 function HomePageContent() {
   const [selectedCategory, setSelectedCategory] = useState('Toutes les catégories');
@@ -20,45 +21,78 @@ function HomePageContent() {
   const router = useRouter();
   const { selectedMenu, loading: menuLoading } = useMenu();
   
+  // Fonction pour recharger les données du menu actuel
+  const loadMenuData = async () => {
+    if (!selectedMenu) return;
+    
+    try {
+      const [productsRes, categoriesRes, farmsRes] = await Promise.all([
+        fetch(`/api/products?menu=${selectedMenu.slug}`, { cache: 'no-store' }),
+        fetch(`/api/categories?menu=${selectedMenu.slug}`, { cache: 'no-store' }),
+        fetch(`/api/farms?menu=${selectedMenu.slug}`, { cache: 'no-store' })
+      ]);
+      
+      if (productsRes.ok) {
+        const productsData = await productsRes.json();
+        setProducts(productsData);
+        contentCache.updateProducts(productsData);
+      }
+      
+      if (categoriesRes.ok) {
+        const categoriesData = await categoriesRes.json();
+        setCategories(['Toutes les catégories', ...categoriesData.map((c: any) => c.name)]);
+        contentCache.updateCategories(categoriesData);
+      }
+      
+      if (farmsRes.ok) {
+        const farmsData = await farmsRes.json();
+        setFarms(['Toutes les farms', ...farmsData.map((f: any) => f.name)]);
+      }
+      
+      // Réinitialiser les filtres quand on change de menu
+      setSelectedCategory('Toutes les catégories');
+      setSelectedFarm('Toutes les farms');
+    } catch (error) {
+      console.error('Erreur lors du chargement des données du menu:', error);
+    }
+  };
+  
   // Recharger les catégories, farms et produits quand le menu change
   useEffect(() => {
     if (selectedMenu) {
-      const loadMenuData = async () => {
-        try {
-          const [productsRes, categoriesRes, farmsRes] = await Promise.all([
-            fetch(`/api/products?menu=${selectedMenu.slug}`, { cache: 'no-store' }),
-            fetch(`/api/categories?menu=${selectedMenu.slug}`, { cache: 'no-store' }),
-            fetch(`/api/farms?menu=${selectedMenu.slug}`, { cache: 'no-store' })
-          ]);
-          
-          if (productsRes.ok) {
-            const productsData = await productsRes.json();
-            setProducts(productsData);
-            contentCache.updateProducts(productsData);
-          }
-          
-          if (categoriesRes.ok) {
-            const categoriesData = await categoriesRes.json();
-            setCategories(['Toutes les catégories', ...categoriesData.map((c: any) => c.name)]);
-            contentCache.updateCategories(categoriesData);
-          }
-          
-          if (farmsRes.ok) {
-            const farmsData = await farmsRes.json();
-            setFarms(['Toutes les farms', ...farmsData.map((f: any) => f.name)]);
-          }
-          
-          // Réinitialiser les filtres quand on change de menu
-          setSelectedCategory('Toutes les catégories');
-          setSelectedFarm('Toutes les farms');
-        } catch (error) {
-          console.error('Erreur lors du chargement des données du menu:', error);
-        }
-      };
-      
       loadMenuData();
     }
   }, [selectedMenu]);
+  
+  // Écouter les événements de mise à jour des catégories et farms
+  useEffect(() => {
+    const handleCategoriesUpdate = () => {
+      console.log('📢 Catégories mises à jour, rechargement...');
+      loadMenuData();
+    };
+    
+    const handleFarmsUpdate = () => {
+      console.log('📢 Farms mises à jour, rechargement...');
+      loadMenuData();
+    };
+    
+    const handleProductsUpdate = () => {
+      console.log('📢 Produits mis à jour, rechargement...');
+      loadMenuData();
+    };
+    
+    // S'abonner aux événements
+    appEvents.on(EVENTS.CATEGORIES_UPDATED, handleCategoriesUpdate);
+    appEvents.on(EVENTS.FARMS_UPDATED, handleFarmsUpdate);
+    appEvents.on(EVENTS.PRODUCTS_UPDATED, handleProductsUpdate);
+    
+    // Se désabonner lors du démontage
+    return () => {
+      appEvents.off(EVENTS.CATEGORIES_UPDATED, handleCategoriesUpdate);
+      appEvents.off(EVENTS.FARMS_UPDATED, handleFarmsUpdate);
+      appEvents.off(EVENTS.PRODUCTS_UPDATED, handleProductsUpdate);
+    };
+  }, [selectedMenu]); // Dépend de selectedMenu pour recharger les bonnes données
   
   // Précharger les autres pages pour navigation instantanée
   useEffect(() => {
