@@ -47,6 +47,31 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Route de métriques pour monitoring
+app.get('/metrics', async (req, res) => {
+    try {
+        const webhookInfo = await bot.getWebHookInfo();
+        res.json({
+            uptime: process.uptime(),
+            memory: process.memoryUsage(),
+            timestamp: new Date().toISOString(),
+            webhook: webhookInfo.url ? 'active' : 'inactive',
+            webhook_url: webhookInfo.url || null,
+            pending_updates: webhookInfo.pending_update_count || 0,
+            last_error: webhookInfo.last_error_date ? new Date(webhookInfo.last_error_date * 1000).toISOString() : null,
+            platform: 'Render',
+            mode: 'webhook',
+            users_count: users.size,
+            admins_count: admins.size
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to get metrics',
+            message: error.message
+        });
+    }
+});
+
 // État des utilisateurs (pour gérer les conversations)
 const userStates = {};
 // Stocker l'ID du dernier message pour chaque chat
@@ -214,6 +239,46 @@ bot.onText(/\/id/, async (msg) => {
             ]]
         }
     });
+});
+
+// Commande /status - Vérifier l'état du webhook
+bot.onText(/\/status/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    
+    try {
+        await bot.deleteMessage(chatId, msg.message_id);
+    } catch (error) {}
+    
+    try {
+        const webhookInfo = await bot.getWebHookInfo();
+        const uptime = process.uptime();
+        const uptimeHours = Math.floor(uptime / 3600);
+        const uptimeMinutes = Math.floor((uptime % 3600) / 60);
+        const uptimeSeconds = Math.floor(uptime % 60);
+        
+        const statusMessage = `📊 **Status du Bot**\n\n` +
+            `✅ **Mode:** Webhook\n` +
+            `🔗 **URL:** ${webhookInfo.url ? 'Configuré ✅' : 'Non configuré ❌'}\n` +
+            `📨 **Messages en attente:** ${webhookInfo.pending_update_count || 0}\n` +
+            `⏱️ **Uptime:** ${uptimeHours}h ${uptimeMinutes}m ${uptimeSeconds}s\n` +
+            `🌐 **Plateforme:** Render\n` +
+            `🚀 **Version:** Webhook 1.0\n` +
+            `${webhookInfo.last_error_date ? `⚠️ **Dernière erreur:** ${new Date(webhookInfo.last_error_date * 1000).toLocaleString()}` : ''}`;
+        
+        await sendNewMessage(chatId, statusMessage, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: '🔄 Actualiser', callback_data: 'refresh_status' },
+                    { text: '❌ Fermer', callback_data: 'admin_close' }
+                ]]
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de la récupération du statut:', error);
+        await sendNewMessage(chatId, '❌ Erreur lors de la récupération du statut');
+    }
 });
 
 // Commande /admin
@@ -559,6 +624,47 @@ bot.on('callback_query', async (callbackQuery) => {
                 }, {
                     parse_mode: 'Markdown'
                 });
+                break;
+
+            case 'refresh_status':
+                try {
+                    const webhookInfo = await bot.getWebHookInfo();
+                    const uptime = process.uptime();
+                    const uptimeHours = Math.floor(uptime / 3600);
+                    const uptimeMinutes = Math.floor((uptime % 3600) / 60);
+                    const uptimeSeconds = Math.floor(uptime % 60);
+                    
+                    const statusMessage = `📊 **Status du Bot**\n\n` +
+                        `✅ **Mode:** Webhook\n` +
+                        `🔗 **URL:** ${webhookInfo.url ? 'Configuré ✅' : 'Non configuré ❌'}\n` +
+                        `📨 **Messages en attente:** ${webhookInfo.pending_update_count || 0}\n` +
+                        `⏱️ **Uptime:** ${uptimeHours}h ${uptimeMinutes}m ${uptimeSeconds}s\n` +
+                        `🌐 **Plateforme:** Render\n` +
+                        `🚀 **Version:** Webhook 1.0\n` +
+                        `${webhookInfo.last_error_date ? `⚠️ **Dernière erreur:** ${new Date(webhookInfo.last_error_date * 1000).toLocaleString()}` : ''}\n\n` +
+                        `_Actualisé à ${new Date().toLocaleTimeString()}_`;
+                    
+                    await updateMessage(chatId, messageId, statusMessage, {
+                        parse_mode: 'Markdown',
+                        reply_markup: {
+                            inline_keyboard: [[
+                                { text: '🔄 Actualiser', callback_data: 'refresh_status' },
+                                { text: '❌ Fermer', callback_data: 'admin_close' }
+                            ]]
+                        }
+                    });
+                    
+                    await bot.answerCallbackQuery(callbackQuery.id, {
+                        text: '✅ Statut actualisé!',
+                        show_alert: false
+                    });
+                } catch (error) {
+                    console.error('Erreur lors de l\'actualisation du statut:', error);
+                    await bot.answerCallbackQuery(callbackQuery.id, {
+                        text: '❌ Erreur lors de l\'actualisation',
+                        show_alert: true
+                    });
+                }
                 break;
 
             case 'admin_close':
