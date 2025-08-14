@@ -39,6 +39,7 @@ export default function FarmsManager() {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true); // Forcer le re-render
     try {
       console.log('🔄 Chargement des données...');
       
