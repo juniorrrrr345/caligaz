@@ -67,8 +67,8 @@ export default function FarmsManager() {
         setMenus([...menusData]); // Créer un nouveau tableau
       }
 
-      // Utiliser l'API de debug pour récupérer TOUTES les farms directement depuis MongoDB
-      const debugRes = await fetch(`/api/check-db?_t=${timestamp}&nocache=${Math.random()}`, {
+      // Utiliser directement l'API farms/all
+      const farmsRes = await fetch(`/api/farms/all?_t=${timestamp}&nocache=${Math.random()}`, { 
         method: 'GET',
         cache: 'no-store',
         headers: {
@@ -78,46 +78,18 @@ export default function FarmsManager() {
         }
       });
       
-      if (debugRes.ok) {
-        const debugData = await debugRes.json();
-        console.log('🔍 Données MongoDB directes:', debugData);
-        
-        // Extraire toutes les farms de tous les menus
-        const allFarms: Farm[] = [];
-        Object.entries(debugData.farmsByMenu).forEach(([menu, farms]: [string, any]) => {
-          farms.forEach((farm: any) => {
-            allFarms.push({
-              _id: farm._id,
-              name: farm.name,
-              slug: farm.slug || farm.name.toLowerCase().replace(/\s+/g, '-'),
-              menu: farm.menu || menu,
-              order: farm.order || 0,
-              isActive: farm.isActive !== false
-            });
-          });
+      if (farmsRes.ok) {
+        const farmsData = await farmsRes.json();
+        console.log('🏭 Farms chargées:', farmsData.length);
+        farmsData.forEach((farm: any) => {
+          console.log(`  - ${farm.name} (Menu: ${farm.menu}, ID: ${farm._id})`);
         });
-        
-        console.log('✅ Farms extraites:', allFarms);
-        setFarms([...allFarms]); // Forcer un nouveau tableau
+        setFarms([...farmsData]);
         setRefreshKey(Date.now());
       } else {
-        // Fallback sur l'ancienne méthode
-        const farmsRes = await fetch(`/api/farms/all?_t=${timestamp}&nocache=${Math.random()}`, { 
-          method: 'GET',
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
-        
-        if (farmsRes.ok) {
-          const farmsData = await farmsRes.json();
-          console.log('🏭 Farms depuis API normale:', farmsData);
-          setFarms([...farmsData]);
-          setRefreshKey(Date.now());
-        }
+        console.error('❌ Erreur chargement farms:', farmsRes.status);
+        setFarms([]);
+        setRefreshKey(Date.now());
       }
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
