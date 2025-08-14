@@ -143,29 +143,33 @@ export default function FarmsManager() {
     try {
       const farmToSave = {
         ...newFarm,
-        slug: newFarm.slug || generateSlug(newFarm.name)
+        slug: newFarm.slug || generateSlug(newFarm.name),
+        menu: newFarm.menu, // S'assurer que le menu est bien présent
+        isActive: true
       };
 
-      console.log('📝 Création de la farm:', farmToSave);
+      console.log('📝 Création de la farm pour le menu:', farmToSave.menu);
+      console.log('📝 Données complètes:', farmToSave);
 
       const response = await fetch('/api/farms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify(farmToSave)
       });
 
       if (response.ok) {
         const farm = await response.json();
-        console.log('✅ Farm créée:', farm);
+        console.log('✅ Farm créée avec succès:', farm);
+        console.log('✅ Menu de la farm créée:', farm.menu);
         
-        toast.success('Farm créée avec succès');
+        toast.success(`Farm créée dans le menu ${farm.menu}`);
         
-        // Solution radicale : forcer le rechargement complet sans cache
+        // Forcer le rechargement complet de la page
         setTimeout(() => {
-          // Forcer le rechargement depuis le serveur
-          window.location.href = window.location.href + '?t=' + Date.now();
+          window.location.href = window.location.pathname + '?refresh=' + Date.now();
         }, 500);
       } else {
         const error = await response.json();

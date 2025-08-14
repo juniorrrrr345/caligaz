@@ -107,29 +107,33 @@ export default function CategoriesManager() {
     try {
       const categoryToSave = {
         ...newCategory,
-        slug: newCategory.slug || generateSlug(newCategory.name)
+        slug: newCategory.slug || generateSlug(newCategory.name),
+        menu: newCategory.menu, // S'assurer que le menu est bien présent
+        isActive: true
       };
 
-      console.log('📝 Création de la catégorie:', categoryToSave);
+      console.log('📝 Création de la catégorie pour le menu:', categoryToSave.menu);
+      console.log('📝 Données complètes:', categoryToSave);
 
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify(categoryToSave)
       });
 
       if (response.ok) {
         const category = await response.json();
-        console.log('✅ Catégorie créée:', category);
+        console.log('✅ Catégorie créée avec succès:', category);
+        console.log('✅ Menu de la catégorie créée:', category.menu);
         
-        toast.success('Catégorie créée avec succès');
+        toast.success(`Catégorie créée dans le menu ${category.menu}`);
         
-        // Solution radicale : forcer le rechargement complet sans cache
+        // Forcer le rechargement complet de la page
         setTimeout(() => {
-          // Forcer le rechargement depuis le serveur
-          window.location.href = window.location.href + '?t=' + Date.now();
+          window.location.href = window.location.pathname + '?refresh=' + Date.now();
         }, 500);
       } else {
         const error = await response.json();
