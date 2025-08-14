@@ -2,11 +2,13 @@
   "name": "telegram-bot-reinafarm",
   "version": "1.0.0",
   "description": "Bot Telegram avec MongoDB pour REINAFARM",
-  "main": "bot-mongodb.js",
+  "main": "bot-webhook.js",
   "scripts": {
-    "start": "node bot-mongodb.js",
+    "start": "node bot-webhook.js",
     "webhook": "node bot-webhook.js",
-    "dev": "nodemon bot-mongodb.js",
+    "polling": "node bot.js",
+    "mongodb": "node bot-mongodb.js",
+    "dev": "nodemon bot-webhook.js",
     "test": "node test-local.js"
   },
   "dependencies": {
