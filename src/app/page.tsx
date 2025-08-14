@@ -9,7 +9,7 @@ import ProductDetail from '../components/ProductDetail';
 import BottomNav from '../components/BottomNav';
 import MenuSelector from '@/components/MenuSelector';
 import { MenuProvider, useMenu } from '@/contexts/MenuContext';
-import contentCache from '../lib/contentCache';
+// import contentCache from '../lib/contentCache'; // Désactivé temporairement
 import { appEvents, EVENTS } from '@/lib/events';
 
 function HomePageContent() {
@@ -25,28 +25,47 @@ function HomePageContent() {
   const loadMenuData = async () => {
     if (!selectedMenu) return;
     
+    console.log('🔄 Chargement des données pour le menu:', selectedMenu.slug);
+    
+    // Vider les états avant de charger les nouvelles données
+    setProducts([]);
+    setCategories(['Toutes les catégories']);
+    setFarms(['Toutes les farms']);
+    
     try {
       const timestamp = Date.now();
       const [productsRes, categoriesRes, farmsRes] = await Promise.all([
-        fetch(`/api/products?menu=${selectedMenu.slug}&t=${timestamp}`, { cache: 'no-store' }),
-        fetch(`/api/categories?menu=${selectedMenu.slug}&t=${timestamp}`, { cache: 'no-store' }),
-        fetch(`/api/farms?menu=${selectedMenu.slug}&t=${timestamp}`, { cache: 'no-store' })
+        fetch(`/api/products?menu=${selectedMenu.slug}&t=${timestamp}`, { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        }),
+        fetch(`/api/categories?menu=${selectedMenu.slug}&t=${timestamp}`, { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        }),
+        fetch(`/api/farms?menu=${selectedMenu.slug}&t=${timestamp}`, { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        })
       ]);
       
       if (productsRes.ok) {
         const productsData = await productsRes.json();
+        console.log(`📦 ${productsData.length} produits chargés pour ${selectedMenu.slug}`);
         setProducts(productsData);
-        contentCache.updateProducts(productsData);
+        // contentCache.updateProducts(productsData);
       }
       
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
+        console.log(`🏷️ ${categoriesData.length} catégories chargées pour ${selectedMenu.slug}:`, categoriesData.map((c: any) => c.name));
         setCategories(['Toutes les catégories', ...categoriesData.map((c: any) => c.name)]);
-        contentCache.updateCategories(categoriesData);
+        // contentCache.updateCategories(categoriesData);
       }
       
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
+        console.log(`🏭 ${farmsData.length} farms chargées pour ${selectedMenu.slug}:`, farmsData.map((f: any) => f.name));
         setFarms(['Toutes les farms', ...farmsData.map((f: any) => f.name)]);
       }
       
