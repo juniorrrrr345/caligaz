@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
     const farms = await Farm.find(filter).sort({ order: 1, name: 1 });
     
     console.log(`✅ ${farms.length} farm(s) trouvée(s) pour le menu ${menu}`);
+    console.log('🔍 Filtre utilisé:', JSON.stringify(filter));
+    console.log('📋 Farms trouvées:', farms.map(f => ({ name: f.name, menu: f.menu })));
     
     // Headers pour éviter le cache et assurer la synchronisation instantanée
     return NextResponse.json(farms, {
@@ -45,8 +47,15 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const data = await request.json();
+    
+    console.log('📝 Création farm - Données reçues:', data);
+    console.log('📝 Menu spécifié:', data.menu);
+    
     const farm = new Farm(data);
     await farm.save();
+    
+    console.log('✅ Farm créée:', { name: farm.name, menu: farm.menu });
+    
     return NextResponse.json(farm, { status: 201 });
   } catch (error) {
     console.error('Error creating farm:', error);

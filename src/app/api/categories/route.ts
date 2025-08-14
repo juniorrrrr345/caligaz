@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
     const categories = await Category.find(filter).sort({ order: 1, name: 1 });
     
     console.log(`✅ ${categories.length} catégorie(s) trouvée(s) pour le menu ${menu}`);
+    console.log('🔍 Filtre utilisé:', JSON.stringify(filter));
+    console.log('📋 Catégories trouvées:', categories.map(c => ({ name: c.name, menu: c.menu })));
     
     // Headers pour éviter le cache et assurer la synchronisation instantanée
     return NextResponse.json(categories, {
@@ -45,8 +47,15 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const data = await request.json();
+    
+    console.log('📝 Création catégorie - Données reçues:', data);
+    console.log('📝 Menu spécifié:', data.menu);
+    
     const category = new Category(data);
     await category.save();
+    
+    console.log('✅ Catégorie créée:', { name: category.name, menu: category.menu });
+    
     return NextResponse.json(category, { status: 201 });
   } catch (error) {
     console.error('Error creating category:', error);
