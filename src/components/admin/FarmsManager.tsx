@@ -114,35 +114,30 @@ export default function FarmsManager() {
 
     try {
       const farmToSave = {
-        ...newFarm,
-        slug: newFarm.slug || generateSlug(newFarm.name),
-        menu: newFarm.menu, // S'assurer que le menu est bien présent
+        name: newFarm.name,
+        slug: generateSlug(newFarm.name),
+        menu: newFarm.menu,
+        order: newFarm.order || 0,
         isActive: true
       };
 
-      console.log('📝 Création de la farm pour le menu:', farmToSave.menu);
-      console.log('📝 Données complètes:', farmToSave);
+      console.log('📝 Création farm pour menu:', farmToSave.menu);
 
       const response = await fetch('/api/farms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify(farmToSave)
       });
 
       if (response.ok) {
         const farm = await response.json();
-        console.log('✅ Farm créée avec succès:', farm);
-        console.log('✅ Menu de la farm créée:', farm.menu);
+        console.log('✅ Farm créée:', farm);
+        toast.success('Farm créée avec succès');
         
-        toast.success(`Farm créée dans le menu ${farm.menu}`);
-        
-        // Forcer le rechargement complet de la page
-        setTimeout(() => {
-          window.location.href = window.location.pathname + '?refresh=' + Date.now();
-        }, 500);
+        // RECHARGEMENT IMMÉDIAT
+        window.location.reload();
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -194,37 +189,27 @@ export default function FarmsManager() {
       return;
     }
 
-    console.log('🗑️ Suppression FORCÉE de la farm:', id);
+    console.log('🗑️ Suppression de la farm:', id);
 
     try {
-      // Utiliser l'API force-delete qui contourne tous les problèmes
       const response = await fetch(`/api/force-delete?type=farm&id=${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
+        method: 'DELETE'
       });
 
-      console.log('📊 Réponse de suppression:', response.status);
-      const result = await response.json();
-      console.log('📊 Résultat:', result);
-
-      if (response.ok && result.success) {
+      if (response.ok) {
+        console.log('✅ Farm supprimée');
         toast.success('Farm supprimée avec succès');
-        console.log('✅ Farm supprimée avec succès');
         
-        // Forcer le rechargement complet de la page
-        setTimeout(() => {
-          window.location.href = window.location.pathname + '?refresh=' + Date.now();
-        }, 500);
+        // RECHARGEMENT IMMÉDIAT
+        window.location.reload();
       } else {
-        console.error('❌ Erreur de suppression:', result);
-        toast.error(`Erreur: ${result.error || result.message || 'Impossible de supprimer la farm'}`);
+        const result = await response.json();
+        console.error('❌ Erreur:', result);
+        toast.error('Erreur lors de la suppression');
       }
     } catch (error) {
-      console.error('❌ Erreur réseau:', error);
-      toast.error('Erreur de connexion au serveur');
+      console.error('❌ Erreur:', error);
+      toast.error('Erreur de connexion');
     }
   };
 

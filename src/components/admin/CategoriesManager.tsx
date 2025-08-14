@@ -106,35 +106,31 @@ export default function CategoriesManager() {
 
     try {
       const categoryToSave = {
-        ...newCategory,
-        slug: newCategory.slug || generateSlug(newCategory.name),
-        menu: newCategory.menu, // S'assurer que le menu est bien présent
+        name: newCategory.name,
+        slug: generateSlug(newCategory.name),
+        menu: newCategory.menu,
+        description: newCategory.description || '',
+        order: newCategory.order || 0,
         isActive: true
       };
 
-      console.log('📝 Création de la catégorie pour le menu:', categoryToSave.menu);
-      console.log('📝 Données complètes:', categoryToSave);
+      console.log('📝 Création catégorie pour menu:', categoryToSave.menu);
 
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify(categoryToSave)
       });
 
       if (response.ok) {
         const category = await response.json();
-        console.log('✅ Catégorie créée avec succès:', category);
-        console.log('✅ Menu de la catégorie créée:', category.menu);
+        console.log('✅ Catégorie créée:', category);
+        toast.success('Catégorie créée avec succès');
         
-        toast.success(`Catégorie créée dans le menu ${category.menu}`);
-        
-        // Forcer le rechargement complet de la page
-        setTimeout(() => {
-          window.location.href = window.location.pathname + '?refresh=' + Date.now();
-        }, 500);
+        // RECHARGEMENT IMMÉDIAT
+        window.location.reload();
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -186,37 +182,27 @@ export default function CategoriesManager() {
       return;
     }
 
-    console.log('🗑️ Suppression FORCÉE de la catégorie:', id);
+    console.log('🗑️ Suppression de la catégorie:', id);
 
     try {
-      // Utiliser l'API force-delete qui contourne tous les problèmes
       const response = await fetch(`/api/force-delete?type=category&id=${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
+        method: 'DELETE'
       });
 
-      console.log('📊 Réponse de suppression:', response.status);
-      const result = await response.json();
-      console.log('📊 Résultat:', result);
-
-      if (response.ok && result.success) {
-        console.log('✅ Catégorie supprimée avec succès');
+      if (response.ok) {
+        console.log('✅ Catégorie supprimée');
         toast.success('Catégorie supprimée avec succès');
         
-        // Forcer le rechargement complet de la page
-        setTimeout(() => {
-          window.location.href = window.location.pathname + '?refresh=' + Date.now();
-        }, 500);
+        // RECHARGEMENT IMMÉDIAT
+        window.location.reload();
       } else {
-        console.error('❌ Erreur de suppression:', result);
-        toast.error(`Erreur: ${result.error || result.message || 'Impossible de supprimer la catégorie'}`);
+        const result = await response.json();
+        console.error('❌ Erreur:', result);
+        toast.error('Erreur lors de la suppression');
       }
     } catch (error) {
-      console.error('❌ Erreur réseau:', error);
-      toast.error('Erreur de connexion au serveur');
+      console.error('❌ Erreur:', error);
+      toast.error('Erreur de connexion');
     }
   };
 
