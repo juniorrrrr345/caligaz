@@ -81,6 +81,8 @@ export default function CategoriesManager() {
         slug: newCategory.slug || generateSlug(newCategory.name)
       };
 
+      console.log('📝 Création de la catégorie:', categoryToSave);
+
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: {
@@ -91,7 +93,11 @@ export default function CategoriesManager() {
 
       if (response.ok) {
         const category = await response.json();
-        setCategories([...categories, category]);
+        console.log('✅ Catégorie créée:', category);
+        
+        // Recharger toutes les catégories pour s'assurer de la synchronisation
+        await fetchData();
+        
         setNewCategory({
           name: '',
           slug: '',
@@ -104,21 +110,21 @@ export default function CategoriesManager() {
         toast.success('Catégorie créée avec succès');
       } else {
         const error = await response.json();
+        console.error('❌ Erreur de création:', error);
         toast.error(error.error || 'Erreur lors de la création');
       }
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('❌ Erreur:', error);
       toast.error('Erreur lors de la création de la catégorie');
     }
   };
 
   const handleUpdate = async () => {
-    if (!editingCategory || !editingCategory.name || !editingCategory.menu) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
+    if (!editingCategory || !editingCategory._id) return;
 
     try {
+      console.log('📝 Mise à jour de la catégorie:', editingCategory);
+
       const response = await fetch(`/api/categories/${editingCategory._id}`, {
         method: 'PUT',
         headers: {
@@ -129,14 +135,20 @@ export default function CategoriesManager() {
 
       if (response.ok) {
         const updatedCategory = await response.json();
-        setCategories(categories.map(c => c._id === updatedCategory._id ? updatedCategory : c));
+        console.log('✅ Catégorie mise à jour:', updatedCategory);
+        
+        // Recharger toutes les catégories pour s'assurer de la synchronisation
+        await fetchData();
+        
         setEditingCategory(null);
         toast.success('Catégorie mise à jour avec succès');
       } else {
-        toast.error('Erreur lors de la mise à jour');
+        const error = await response.json();
+        console.error('❌ Erreur de mise à jour:', error);
+        toast.error(error.error || 'Erreur lors de la mise à jour');
       }
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('❌ Erreur:', error);
       toast.error('Erreur lors de la mise à jour');
     }
   };
@@ -159,7 +171,8 @@ export default function CategoriesManager() {
       console.log('📊 Réponse de suppression:', response.status);
 
       if (response.ok) {
-        setCategories(categories.filter(c => c._id !== id));
+        // Recharger toutes les catégories pour s'assurer de la synchronisation
+        await fetchData();
         toast.success('Catégorie supprimée avec succès');
         console.log('✅ Catégorie supprimée avec succès');
       } else {

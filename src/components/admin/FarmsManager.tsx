@@ -80,6 +80,8 @@ export default function FarmsManager() {
         slug: newFarm.slug || generateSlug(newFarm.name)
       };
 
+      console.log('📝 Création de la farm:', farmToSave);
+
       const response = await fetch('/api/farms', {
         method: 'POST',
         headers: {
@@ -90,7 +92,11 @@ export default function FarmsManager() {
 
       if (response.ok) {
         const farm = await response.json();
-        setFarms([...farms, farm]);
+        console.log('✅ Farm créée:', farm);
+        
+        // Recharger toutes les farms pour s'assurer de la synchronisation
+        await fetchData();
+        
         setNewFarm({
           name: '',
           slug: '',
@@ -102,21 +108,21 @@ export default function FarmsManager() {
         toast.success('Farm créée avec succès');
       } else {
         const error = await response.json();
+        console.error('❌ Erreur de création:', error);
         toast.error(error.error || 'Erreur lors de la création');
       }
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('❌ Erreur:', error);
       toast.error('Erreur lors de la création de la farm');
     }
   };
 
   const handleUpdate = async () => {
-    if (!editingFarm || !editingFarm.name || !editingFarm.menu) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
+    if (!editingFarm || !editingFarm._id) return;
 
     try {
+      console.log('📝 Mise à jour de la farm:', editingFarm);
+
       const response = await fetch(`/api/farms/${editingFarm._id}`, {
         method: 'PUT',
         headers: {
@@ -127,14 +133,20 @@ export default function FarmsManager() {
 
       if (response.ok) {
         const updatedFarm = await response.json();
-        setFarms(farms.map(f => f._id === updatedFarm._id ? updatedFarm : f));
+        console.log('✅ Farm mise à jour:', updatedFarm);
+        
+        // Recharger toutes les farms pour s'assurer de la synchronisation
+        await fetchData();
+        
         setEditingFarm(null);
         toast.success('Farm mise à jour avec succès');
       } else {
-        toast.error('Erreur lors de la mise à jour');
+        const error = await response.json();
+        console.error('❌ Erreur de mise à jour:', error);
+        toast.error(error.error || 'Erreur lors de la mise à jour');
       }
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('❌ Erreur:', error);
       toast.error('Erreur lors de la mise à jour');
     }
   };
@@ -144,20 +156,31 @@ export default function FarmsManager() {
       return;
     }
 
+    console.log('🗑️ Tentative de suppression de la farm:', id);
+
     try {
       const response = await fetch(`/api/farms/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
 
+      console.log('📊 Réponse de suppression:', response.status);
+
       if (response.ok) {
-        setFarms(farms.filter(f => f._id !== id));
+        // Recharger toutes les farms pour s'assurer de la synchronisation
+        await fetchData();
         toast.success('Farm supprimée avec succès');
+        console.log('✅ Farm supprimée avec succès');
       } else {
-        toast.error('Erreur lors de la suppression');
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
+        console.error('❌ Erreur de suppression:', errorData);
+        toast.error(`Erreur: ${errorData.error || 'Impossible de supprimer la farm'}`);
       }
     } catch (error) {
-      console.error('Erreur:', error);
-      toast.error('Erreur lors de la suppression');
+      console.error('❌ Erreur réseau:', error);
+      toast.error('Erreur de connexion au serveur');
     }
   };
 
