@@ -40,6 +40,22 @@ export default function CategoriesManager() {
     fetchData();
   }, []);
 
+  // Écouter les événements de mise à jour des catégories
+  useEffect(() => {
+    const handleCategoriesUpdate = () => {
+      console.log('📢 Événement CATEGORIES_UPDATED reçu, rechargement des catégories...');
+      fetchData();
+    };
+    
+    // S'abonner à l'événement
+    appEvents.on(EVENTS.CATEGORIES_UPDATED, handleCategoriesUpdate);
+    
+    // Se désabonner lors du démontage
+    return () => {
+      appEvents.off(EVENTS.CATEGORIES_UPDATED, handleCategoriesUpdate);
+    };
+  }, []);
+
   const fetchData = async () => {
     try {
       console.log('🔄 Chargement des données...');
@@ -105,9 +121,6 @@ export default function CategoriesManager() {
         const category = await response.json();
         console.log('✅ Catégorie créée:', category);
         
-        // Recharger toutes les catégories pour s'assurer de la synchronisation
-        await fetchData();
-        
         setNewCategory({
           name: '',
           slug: '',
@@ -118,7 +131,7 @@ export default function CategoriesManager() {
         });
         setIsCreating(false);
         toast.success('Catégorie créée avec succès');
-        // Émettre l'événement pour rafraîchir les catégories côté client
+        // Émettre l'événement pour rafraîchir les catégories partout (y compris ici)
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const error = await response.json();
@@ -149,12 +162,9 @@ export default function CategoriesManager() {
         const updatedCategory = await response.json();
         console.log('✅ Catégorie mise à jour:', updatedCategory);
         
-        // Recharger toutes les catégories pour s'assurer de la synchronisation
-        await fetchData();
-        
         setEditingCategory(null);
         toast.success('Catégorie mise à jour avec succès');
-        // Émettre l'événement pour rafraîchir les catégories côté client
+        // Émettre l'événement pour rafraîchir les catégories partout (y compris ici)
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const error = await response.json();
@@ -185,11 +195,9 @@ export default function CategoriesManager() {
       console.log('📊 Réponse de suppression:', response.status);
 
       if (response.ok) {
-        // Recharger toutes les catégories pour s'assurer de la synchronisation
-        await fetchData();
         toast.success('Catégorie supprimée avec succès');
         console.log('✅ Catégorie supprimée avec succès');
-        // Émettre l'événement pour rafraîchir les catégories côté client
+        // Émettre l'événement pour rafraîchir les catégories partout (y compris ici)
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));

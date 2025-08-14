@@ -39,6 +39,22 @@ export default function FarmsManager() {
     fetchData();
   }, []);
 
+  // Écouter les événements de mise à jour des farms
+  useEffect(() => {
+    const handleFarmsUpdate = () => {
+      console.log('📢 Événement FARMS_UPDATED reçu, rechargement des farms...');
+      fetchData();
+    };
+    
+    // S'abonner à l'événement
+    appEvents.on(EVENTS.FARMS_UPDATED, handleFarmsUpdate);
+    
+    // Se désabonner lors du démontage
+    return () => {
+      appEvents.off(EVENTS.FARMS_UPDATED, handleFarmsUpdate);
+    };
+  }, []);
+
   const fetchData = async () => {
     try {
       console.log('🔄 Chargement des données...');
@@ -104,9 +120,6 @@ export default function FarmsManager() {
         const farm = await response.json();
         console.log('✅ Farm créée:', farm);
         
-        // Recharger toutes les farms pour s'assurer de la synchronisation
-        await fetchData();
-        
         setNewFarm({
           name: '',
           slug: '',
@@ -116,7 +129,7 @@ export default function FarmsManager() {
         });
         setIsCreating(false);
         toast.success('Farm créée avec succès');
-        // Émettre l'événement pour rafraîchir les farms côté client
+        // Émettre l'événement pour rafraîchir les farms partout (y compris ici)
         appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const error = await response.json();
@@ -147,12 +160,9 @@ export default function FarmsManager() {
         const updatedFarm = await response.json();
         console.log('✅ Farm mise à jour:', updatedFarm);
         
-        // Recharger toutes les farms pour s'assurer de la synchronisation
-        await fetchData();
-        
         setEditingFarm(null);
         toast.success('Farm mise à jour avec succès');
-        // Émettre l'événement pour rafraîchir les farms côté client
+        // Émettre l'événement pour rafraîchir les farms partout (y compris ici)
         appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const error = await response.json();
@@ -183,11 +193,9 @@ export default function FarmsManager() {
       console.log('📊 Réponse de suppression:', response.status);
 
       if (response.ok) {
-        // Recharger toutes les farms pour s'assurer de la synchronisation
-        await fetchData();
         toast.success('Farm supprimée avec succès');
         console.log('✅ Farm supprimée avec succès');
-        // Émettre l'événement pour rafraîchir les farms côté client
+        // Émettre l'événement pour rafraîchir les farms partout (y compris ici)
         appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
