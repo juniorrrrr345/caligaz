@@ -28,5 +28,7 @@ export const appEvents = new EventEmitter();
 export const EVENTS = {
   MENUS_UPDATED: 'menus_updated',
   PRODUCTS_UPDATED: 'products_updated',
-  SETTINGS_UPDATED: 'settings_updated'
+  SETTINGS_UPDATED: 'settings_updated',
+  CATEGORIES_UPDATED: 'categories_updated',
+  FARMS_UPDATED: 'farms_updated'
 };

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { appEvents, EVENTS } from '@/lib/events';
 
 interface Category {
   _id?: string;
@@ -117,6 +118,8 @@ export default function CategoriesManager() {
         });
         setIsCreating(false);
         toast.success('Catégorie créée avec succès');
+        // Émettre l'événement pour rafraîchir les catégories côté client
+        appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -151,6 +154,8 @@ export default function CategoriesManager() {
         
         setEditingCategory(null);
         toast.success('Catégorie mise à jour avec succès');
+        // Émettre l'événement pour rafraîchir les catégories côté client
+        appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de mise à jour:', error);
@@ -184,6 +189,8 @@ export default function CategoriesManager() {
         await fetchData();
         toast.success('Catégorie supprimée avec succès');
         console.log('✅ Catégorie supprimée avec succès');
+        // Émettre l'événement pour rafraîchir les catégories côté client
+        appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
         console.error('❌ Erreur de suppression:', errorData);
