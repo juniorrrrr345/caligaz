@@ -123,21 +123,12 @@ export default function FarmsManager() {
         const farm = await response.json();
         console.log('✅ Farm créée:', farm);
         
-        // Petit délai pour s'assurer que MongoDB a bien traité
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Recharger les données
-        await fetchData();
-        
-        setNewFarm({
-          name: '',
-          slug: '',
-          menu: 'caligaz',
-          order: farms.length,
-          isActive: true
-        });
-        setIsCreating(false);
         toast.success('Farm créée avec succès');
+        
+        // Solution radicale : recharger la page
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -167,11 +158,12 @@ export default function FarmsManager() {
         const updatedFarm = await response.json();
         console.log('✅ Farm mise à jour:', updatedFarm);
         
-        // Recharger les données immédiatement
-        await fetchData();
-        
-        setEditingFarm(null);
         toast.success('Farm mise à jour avec succès');
+        
+        // Solution radicale : recharger la page
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de mise à jour:', error);
@@ -204,11 +196,10 @@ export default function FarmsManager() {
         toast.success('Farm supprimée avec succès');
         console.log('✅ Farm supprimée avec succès');
         
-        // Petit délai pour s'assurer que MongoDB a bien traité
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Recharger les données
-        await fetchData();
+        // Solution radicale : recharger la page
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
         console.error('❌ Erreur de suppression:', errorData);
