@@ -198,8 +198,10 @@ function HomePageContent() {
   // CHARGEMENT INSTANTANÉ DEPUIS LE CACHE
   useEffect(() => {
     // 1. D'abord charger depuis le cache pour affichage immédiat
-    const cachedProducts = contentCache.getProducts();
-    const cachedCategories = contentCache.getCategories();
+    // const cachedProducts = contentCache.getProducts();
+    // const cachedCategories = contentCache.getCategories();
+    const cachedProducts: any[] = [];
+    const cachedCategories: any[] = [];
     
     if (cachedProducts.length > 0) {
       setProducts(cachedProducts);
@@ -223,13 +225,13 @@ function HomePageContent() {
         if (productsRes.ok) {
           const productsData = await productsRes.json();
           setProducts(productsData);
-          contentCache.updateProducts(productsData);
+          // contentCache.updateProducts(productsData);
         }
 
                   if (categoriesRes.ok) {
             const categoriesData = await categoriesRes.json();
             setCategories(['Toutes les catégories', ...categoriesData.map((c: any) => c.name)]);
-            contentCache.updateCategories(categoriesData);
+            // contentCache.updateCategories(categoriesData);
           }
 
           if (farmsRes.ok) {
