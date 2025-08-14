@@ -3,7 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const fs = require('fs-extra');
 const path = require('path');
-const { loadConfig, saveConfig, getImagePath, IMAGES_DIR } = require('./config');
+const { loadConfig, saveConfig, loadUsers, saveUsers, loadAdmins, saveAdmins, getImagePath, IMAGES_DIR } = require('./config');
 const { getMainKeyboard, getAdminKeyboard, getSocialManageKeyboard, getSocialLayoutKeyboard, getConfirmKeyboard } = require('./keyboards');
 
 // Configuration Express
@@ -77,25 +77,54 @@ const userStates = {};
 // Stocker l'ID du dernier message pour chaque chat
 const activeMessages = {};
 // Stocker les utilisateurs qui ont interagi avec le bot
+let usersData = {};
 const users = new Set();
 // Stocker les administrateurs
-const admins = new Set([ADMIN_ID]);
+let admins = new Set([ADMIN_ID]);
 
 // Temps de démarrage du bot
 const botStartTime = new Date();
 
-// Charger la configuration au démarrage
+// Charger la configuration et les données au démarrage
 let config = loadConfig();
+
+// Initialiser les données au démarrage
+function initializeData() {
+    // Charger les utilisateurs
+    usersData = loadUsers();
+    Object.keys(usersData).forEach(userId => users.add(parseInt(userId)));
+    
+    // Charger les admins
+    admins = loadAdmins();
+    if (!admins.has(ADMIN_ID)) {
+        admins.add(ADMIN_ID);
+    }
+    
+    console.log(`✅ ${users.size} utilisateurs chargés`);
+    console.log(`✅ ${admins.size} administrateurs chargés`);
+}
+
+// Initialiser les données
+initializeData();
 
 // Fonction pour sauvegarder un utilisateur
 async function saveUser(userId, userInfo) {
     users.add(userId);
+    usersData[userId] = {
+        userId,
+        username: userInfo.username,
+        firstName: userInfo.first_name,
+        lastName: userInfo.last_name,
+        isAdmin: admins.has(userId),
+        firstSeen: usersData[userId]?.firstSeen || new Date().toISOString(),
+        lastSeen: new Date().toISOString()
+    };
+    saveUsers(usersData);
 }
 
 // Fonction pour sauvegarder les admins
-function saveAdmins() {
-    // Dans cette version simplifiée, on garde les admins en mémoire
-    // Vous pouvez implémenter une sauvegarde persistante si nécessaire
+function saveAdminsData() {
+    saveAdmins(admins);
 }
 
 // Fonction pour supprimer l'ancien message actif
@@ -213,6 +242,47 @@ bot.onText(/\/start/, async (msg) => {
     await sendWelcomeMessage(chatId, null, msg.from);
 });
 
+// Commande /help - Afficher toutes les commandes disponibles
+bot.onText(/\/help/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    
+    try {
+        await bot.deleteMessage(chatId, msg.message_id);
+    } catch (error) {}
+    
+    let helpMessage = `📚 **Commandes disponibles**\n\n`;
+    helpMessage += `**Commandes générales:**\n`;
+    helpMessage += `/start - Démarrer le bot\n`;
+    helpMessage += `/help - Afficher cette aide\n`;
+    helpMessage += `/id - Obtenir votre ID Telegram\n`;
+    helpMessage += `/status - Vérifier l'état du webhook\n\n`;
+    
+    if (admins.has(userId)) {
+        helpMessage += `**Commandes administrateur:**\n`;
+        helpMessage += `/admin - Menu administrateur\n`;
+        helpMessage += `/reset - Réinitialiser la configuration\n`;
+        helpMessage += `/stats - Voir les statistiques rapides\n\n`;
+        helpMessage += `**Gestion disponible dans /admin:**\n`;
+        helpMessage += `• Modifier le message d'accueil\n`;
+        helpMessage += `• Changer la photo d'accueil\n`;
+        helpMessage += `• Gérer les réseaux sociaux\n`;
+        helpMessage += `• Configurer la mini app\n`;
+        helpMessage += `• Gérer les administrateurs\n`;
+        helpMessage += `• Diffuser des messages\n`;
+        helpMessage += `• Exporter les utilisateurs\n`;
+    }
+    
+    await sendNewMessage(chatId, helpMessage, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [[
+                { text: '❌ Fermer', callback_data: 'admin_close' }
+            ]]
+        }
+    });
+});
+
 // Commande /id
 bot.onText(/\/id/, async (msg) => {
     const chatId = msg.chat.id;
@@ -279,6 +349,71 @@ bot.onText(/\/status/, async (msg) => {
         console.error('Erreur lors de la récupération du statut:', error);
         await sendNewMessage(chatId, '❌ Erreur lors de la récupération du statut');
     }
+});
+
+// Commande /stats - Statistiques rapides (admin uniquement)
+bot.onText(/\/stats/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    
+    try {
+        await bot.deleteMessage(chatId, msg.message_id);
+    } catch (error) {}
+    
+    if (!admins.has(userId)) {
+        await sendNewMessage(chatId, '❌ Vous n\'êtes pas autorisé à voir les statistiques.');
+        return;
+    }
+    
+    const totalUsers = users.size;
+    const totalAdmins = admins.size;
+    const uptime = process.uptime();
+    const uptimeHours = Math.floor(uptime / 3600);
+    const uptimeMinutes = Math.floor((uptime % 3600) / 60);
+    
+    const statsMessage = `📊 **Statistiques rapides**\n\n` +
+        `👥 Utilisateurs: ${totalUsers}\n` +
+        `👑 Admins: ${totalAdmins}\n` +
+        `⏱️ Uptime: ${uptimeHours}h ${uptimeMinutes}m\n` +
+        `🌐 Mode: Webhook\n` +
+        `📅 ${new Date().toLocaleString('fr-FR')}`;
+    
+    await sendNewMessage(chatId, statsMessage, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [[
+                { text: '📊 Détails complets', callback_data: 'admin_stats' },
+                { text: '❌ Fermer', callback_data: 'admin_close' }
+            ]]
+        }
+    });
+});
+
+// Commande /reset - Réinitialiser la configuration (admin uniquement)
+bot.onText(/\/reset/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    
+    try {
+        await bot.deleteMessage(chatId, msg.message_id);
+    } catch (error) {}
+    
+    if (!admins.has(userId)) {
+        await sendNewMessage(chatId, '❌ Vous n\'êtes pas autorisé à réinitialiser la configuration.');
+        return;
+    }
+    
+    const { resetConfig } = require('./config');
+    config = resetConfig();
+    
+    await sendNewMessage(chatId, '🔄 Configuration réinitialisée avec succès!\n\nLa configuration par défaut LAMAINVERTE a été restaurée.', {
+        reply_markup: {
+            inline_keyboard: [[
+                { text: '🔧 Menu Admin', callback_data: 'admin_menu' },
+                { text: '❌ Fermer', callback_data: 'admin_close' }
+            ]]
+        }
+    });
 });
 
 // Commande /admin
@@ -711,7 +846,7 @@ bot.on('callback_query', async (callbackQuery) => {
                     const adminToRemove = parseInt(data.replace('remove_admin_', ''));
                     if (admins.has(adminToRemove) && adminToRemove !== ADMIN_ID) {
                         admins.delete(adminToRemove);
-                        saveAdmins();
+                        saveAdminsData();
                         await bot.answerCallbackQuery(callbackQuery.id, {
                             text: '✅ Administrateur retiré!',
                             show_alert: true
@@ -918,7 +1053,7 @@ bot.on('message', async (msg) => {
                         const newAdminUsername = newAdminChat.username ? `@${newAdminChat.username}` : '';
                         
                         admins.add(newAdminId);
-                        saveAdmins();
+                        saveAdminsData();
                         delete userStates[userId];
                         
                         try {
