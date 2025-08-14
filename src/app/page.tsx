@@ -20,25 +20,37 @@ function HomePageContent() {
   const router = useRouter();
   const { selectedMenu, loading: menuLoading } = useMenu();
   
-  // Recharger les catégories et farms quand le menu change
+  // Recharger les catégories, farms et produits quand le menu change
   useEffect(() => {
     if (selectedMenu) {
       const loadMenuData = async () => {
         try {
-          const [categoriesRes, farmsRes] = await Promise.all([
+          const [productsRes, categoriesRes, farmsRes] = await Promise.all([
+            fetch(`/api/products?menu=${selectedMenu.slug}`, { cache: 'no-store' }),
             fetch(`/api/categories?menu=${selectedMenu.slug}`, { cache: 'no-store' }),
             fetch(`/api/farms?menu=${selectedMenu.slug}`, { cache: 'no-store' })
           ]);
           
+          if (productsRes.ok) {
+            const productsData = await productsRes.json();
+            setProducts(productsData);
+            contentCache.updateProducts(productsData);
+          }
+          
           if (categoriesRes.ok) {
             const categoriesData = await categoriesRes.json();
             setCategories(['Toutes les catégories', ...categoriesData.map((c: any) => c.name)]);
+            contentCache.updateCategories(categoriesData);
           }
           
           if (farmsRes.ok) {
             const farmsData = await farmsRes.json();
             setFarms(['Toutes les farms', ...farmsData.map((f: any) => f.name)]);
           }
+          
+          // Réinitialiser les filtres quand on change de menu
+          setSelectedCategory('Toutes les catégories');
+          setSelectedFarm('Toutes les farms');
         } catch (error) {
           console.error('Erreur lors du chargement des données du menu:', error);
         }
@@ -149,7 +161,7 @@ function HomePageContent() {
           const menuSlug = selectedMenu?.slug || localStorage.getItem('selectedMenuSlug') || 'caligaz';
           
           const [productsRes, categoriesRes, farmsRes] = await Promise.all([
-            fetch('/api/products', { cache: 'no-store' }),
+            fetch(`/api/products?menu=${menuSlug}`, { cache: 'no-store' }),
             fetch(`/api/categories?menu=${menuSlug}`, { cache: 'no-store' }),
             fetch(`/api/farms?menu=${menuSlug}`, { cache: 'no-store' })
           ]);

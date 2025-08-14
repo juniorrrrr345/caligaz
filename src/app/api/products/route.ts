@@ -1,18 +1,33 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb-fixed';
 
 // Configuration Next.js 14 pour les limites de requête
 export const maxDuration = 30; // 30 secondes timeout
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     console.log('🔍 API Products - GET Request');
+    
+    // Récupérer le menu depuis les query params
+    const { searchParams } = new URL(req.url);
+    const menu = searchParams.get('menu');
     
     const { db } = await connectToDatabase();
     const productsCollection = db.collection('products');
     
-    const products = await productsCollection.find({ isActive: { $ne: false } }).sort({ createdAt: -1 }).toArray();
+    // Construire le filtre
+    const filter: any = { isActive: { $ne: false } };
+    
+    // Si un menu est spécifié, filtrer par menu
+    if (menu) {
+      filter.menu = menu;
+      console.log(`📦 Récupération des produits pour le menu: ${menu}`);
+    } else {
+      console.log('📦 Récupération de tous les produits actifs');
+    }
+    
+    const products = await productsCollection.find(filter).sort({ createdAt: -1 }).toArray();
     console.log(`📦 Produits trouvés: ${products.length}`);
     
     // Ajouter des headers pour éviter le cache et assurer la synchronisation
