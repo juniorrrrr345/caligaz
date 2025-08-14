@@ -74,22 +74,30 @@ export default function ProductsManager() {
     try {
       console.log(`🔄 Chargement des catégories et farms pour le menu: ${menu}`);
       
-      // Charger les catégories du menu sélectionné
-      const categoriesRes = await fetch(`/api/categories?menu=${menu}`);
+      // Charger TOUTES les catégories (utiliser /all pour avoir toutes les catégories)
+      const categoriesRes = await fetch(`/api/categories/all`);
       if (categoriesRes.ok) {
-        const categoriesData = await categoriesRes.json();
-        setMenuCategories(categoriesData.map((c: { name: string }) => c.name));
-        console.log(`✅ Catégories du menu ${menu}:`, categoriesData.map((c: { name: string }) => c.name));
+        const allCategories = await categoriesRes.json();
+        // Filtrer par menu côté client
+        const menuCats = allCategories
+          .filter((c: any) => c.menu === menu)
+          .map((c: { name: string }) => c.name);
+        setMenuCategories(menuCats);
+        console.log(`✅ Catégories du menu ${menu}:`, menuCats);
       } else {
         setMenuCategories([]);
       }
 
-      // Charger les farms du menu sélectionné
-      const farmsRes = await fetch(`/api/farms?menu=${menu}`);
+      // Charger TOUTES les farms (utiliser /all pour avoir toutes les farms)
+      const farmsRes = await fetch(`/api/farms/all`);
       if (farmsRes.ok) {
-        const farmsData = await farmsRes.json();
-        setMenuFarms(farmsData.map((f: { name: string }) => f.name));
-        console.log(`✅ Farms du menu ${menu}:`, farmsData.map((f: { name: string }) => f.name));
+        const allFarms = await farmsRes.json();
+        // Filtrer par menu côté client
+        const menuFms = allFarms
+          .filter((f: any) => f.menu === menu)
+          .map((f: { name: string }) => f.name);
+        setMenuFarms(menuFms);
+        console.log(`✅ Farms du menu ${menu}:`, menuFms);
       } else {
         setMenuFarms([]);
       }
@@ -116,9 +124,9 @@ export default function ProductsManager() {
         setProducts([]); // Fallback to empty array
       }
 
-      // Charger les catégories (toutes ou par menu si spécifié)
-      console.log('🏷️ Chargement des catégories...');
-      const categoriesRes = await fetch('/api/categories');
+      // Charger TOUTES les catégories (sans filtre)
+      console.log('🏷️ Chargement de toutes les catégories...');
+      const categoriesRes = await fetch('/api/categories/all');
       console.log('🏷️ Réponse catégories:', categoriesRes.status);
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
@@ -129,9 +137,9 @@ export default function ProductsManager() {
         setCategories([]);
       }
 
-      // Charger les farms (toutes ou par menu si spécifié)
-      console.log('🏭 Chargement des farms...');
-      const farmsRes = await fetch('/api/farms');
+      // Charger TOUTES les farms (sans filtre)
+      console.log('🏭 Chargement de toutes les farms...');
+      const farmsRes = await fetch('/api/farms/all');
       console.log('🏭 Réponse farms:', farmsRes.status);
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
@@ -210,23 +218,27 @@ export default function ProductsManager() {
   const handleAdd = () => {
     setEditingProduct(null);
     // Commencer avec un produit complètement vide mais garder les champs
+    const defaultMenu = menus.length > 0 ? menus[0].slug : 'caligaz';
     setFormData({
       name: '',
       category: '',
       farm: '',
-      menu: 'caligaz',
+      menu: defaultMenu,
       image: '',
       video: '',
       prices: {},
       description: '',
       isActive: true
     });
-    // Aucun prix par défaut - interface complètement vide
+    // Vider les états locaux des prix et promotions
     setPriceInputs({});
     setQuantityInputs({});
     setPromotionInputs({});
     setActiveTab('infos'); // Reset tab to infos
     setShowModal(true);
+    
+    // Charger les catégories et farms pour le menu par défaut
+    loadCategoriesAndFarmsByMenu(defaultMenu);
   };
 
   // Fonction pour synchroniser les états locaux avec formData avant sauvegarde
@@ -1070,10 +1082,19 @@ export default function ProductsManager() {
                     className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
                   >
                     <option value="">Sélectionner une catégorie</option>
-                    {menuCategories.map((category) => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
+                    {menuCategories.length > 0 ? (
+                      menuCategories.map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                      ))
+                    ) : (
+                      <option value="" disabled>Aucune catégorie disponible pour ce menu</option>
+                    )}
                   </select>
+                  {menuCategories.length === 0 && (
+                    <p className="text-xs text-yellow-400 mt-1">
+                      💡 Créez d'abord des catégories pour le menu "{formData.menu}"
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -1084,10 +1105,19 @@ export default function ProductsManager() {
                     className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
                   >
                     <option value="">Sélectionner une farm</option>
-                    {menuFarms.map((farm) => (
-                      <option key={farm} value={farm}>{farm}</option>
-                    ))}
+                    {menuFarms.length > 0 ? (
+                      menuFarms.map((farm) => (
+                        <option key={farm} value={farm}>{farm}</option>
+                      ))
+                    ) : (
+                      <option value="" disabled>Aucune farm disponible pour ce menu</option>
+                    )}
                   </select>
+                  {menuFarms.length === 0 && (
+                    <p className="text-xs text-yellow-400 mt-1">
+                      💡 Créez d'abord des farms pour le menu "{formData.menu}"
+                    </p>
+                  )}
                 </div>
 
 
@@ -1364,10 +1394,19 @@ export default function ProductsManager() {
                         className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
                       >
                         <option value="">Sélectionner une catégorie</option>
-                        {menuCategories.map((category) => (
-                          <option key={category} value={category}>{category}</option>
-                        ))}
+                        {menuCategories.length > 0 ? (
+                          menuCategories.map((category) => (
+                            <option key={category} value={category}>{category}</option>
+                          ))
+                        ) : (
+                          <option value="" disabled>Aucune catégorie disponible pour ce menu</option>
+                        )}
                       </select>
+                      {menuCategories.length === 0 && (
+                        <p className="text-xs text-yellow-400 mt-1">
+                          💡 Créez d'abord des catégories pour le menu "{formData.menu}"
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -1378,10 +1417,19 @@ export default function ProductsManager() {
                         className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
                       >
                         <option value="">Sélectionner une farm</option>
-                        {menuFarms.map((farm) => (
-                          <option key={farm} value={farm}>{farm}</option>
-                        ))}
+                        {menuFarms.length > 0 ? (
+                          menuFarms.map((farm) => (
+                            <option key={farm} value={farm}>{farm}</option>
+                          ))
+                        ) : (
+                          <option value="" disabled>Aucune farm disponible pour ce menu</option>
+                        )}
                       </select>
+                      {menuFarms.length === 0 && (
+                        <p className="text-xs text-yellow-400 mt-1">
+                          💡 Créez d'abord des farms pour le menu "{formData.menu}"
+                        </p>
+                      )}
                     </div>
 
 
