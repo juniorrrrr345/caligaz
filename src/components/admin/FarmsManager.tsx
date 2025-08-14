@@ -125,9 +125,10 @@ export default function FarmsManager() {
         
         toast.success('Farm créée avec succès');
         
-        // Solution radicale : recharger la page
+        // Solution radicale : forcer le rechargement complet sans cache
         setTimeout(() => {
-          window.location.reload();
+          // Forcer le rechargement depuis le serveur
+          window.location.href = window.location.href + '?t=' + Date.now();
         }, 500);
       } else {
         const error = await response.json();
@@ -196,9 +197,10 @@ export default function FarmsManager() {
         toast.success('Farm supprimée avec succès');
         console.log('✅ Farm supprimée avec succès');
         
-        // Solution radicale : recharger la page
+        // Solution radicale : forcer le rechargement complet sans cache
         setTimeout(() => {
-          window.location.reload();
+          // Forcer le rechargement depuis le serveur
+          window.location.href = window.location.href + '?t=' + Date.now();
         }, 500);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
