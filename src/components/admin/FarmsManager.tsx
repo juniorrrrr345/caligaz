@@ -40,21 +40,30 @@ export default function FarmsManager() {
 
   const fetchData = async () => {
     try {
+      console.log('🔄 Chargement des données...');
+      
       // Charger les menus
       const menusRes = await fetch('/api/menus');
       if (menusRes.ok) {
         const menusData = await menusRes.json();
         setMenus(menusData);
+        console.log('📋 Menus chargés:', menusData.length);
       }
 
       // Charger TOUTES les farms (sans filtre par menu)
       const farmsRes = await fetch('/api/farms/all');
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
+        console.log('🏭 Farms chargées:', farmsData.length);
+        farmsData.forEach((farm: any) => {
+          console.log(`  - ${farm.name} (Menu: ${farm.menu}, ID: ${farm._id})`);
+        });
         setFarms(farmsData);
+      } else {
+        console.error('❌ Erreur chargement farms:', farmsRes.status);
       }
     } catch (error) {
-      console.error('Erreur lors du chargement:', error);
+      console.error('❌ Erreur lors du chargement:', error);
       toast.error('Erreur lors du chargement des données');
     } finally {
       setLoading(false);

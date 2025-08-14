@@ -41,21 +41,30 @@ export default function CategoriesManager() {
 
   const fetchData = async () => {
     try {
+      console.log('🔄 Chargement des données...');
+      
       // Charger les menus
       const menusRes = await fetch('/api/menus');
       if (menusRes.ok) {
         const menusData = await menusRes.json();
         setMenus(menusData);
+        console.log('📋 Menus chargés:', menusData.length);
       }
 
       // Charger TOUTES les catégories (sans filtre par menu)
       const categoriesRes = await fetch('/api/categories/all');
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
+        console.log('🏷️ Catégories chargées:', categoriesData.length);
+        categoriesData.forEach((cat: any) => {
+          console.log(`  - ${cat.name} (Menu: ${cat.menu}, ID: ${cat._id})`);
+        });
         setCategories(categoriesData);
+      } else {
+        console.error('❌ Erreur chargement catégories:', categoriesRes.status);
       }
     } catch (error) {
-      console.error('Erreur lors du chargement:', error);
+      console.error('❌ Erreur lors du chargement:', error);
       toast.error('Erreur lors du chargement des données');
     } finally {
       setLoading(false);
