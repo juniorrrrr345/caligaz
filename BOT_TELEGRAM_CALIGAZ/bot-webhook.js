@@ -3,7 +3,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const fs = require('fs-extra');
 const path = require('path');
-const { loadConfig, saveConfig, loadUsers, saveUsers, loadAdmins, saveAdmins, getImagePath, IMAGES_DIR } = require('./config');
+const { loadConfig, saveConfig, resetConfig, getImagePath, Config } = require('./config');
+const mongoose = require('mongoose');
 const { getMainKeyboard, getAdminKeyboard, getSocialManageKeyboard, getSocialLayoutKeyboard, getConfirmKeyboard } = require('./keyboards');
 
 // Configuration Express
@@ -72,12 +73,24 @@ app.get('/metrics', async (req, res) => {
     }
 });
 
+// Schéma MongoDB pour les utilisateurs
+const userSchema = new mongoose.Schema({
+    userId: { type: Number, required: true, unique: true },
+    username: String,
+    firstName: String,
+    lastName: String,
+    isAdmin: { type: Boolean, default: false },
+    firstSeen: { type: Date, default: Date.now },
+    lastSeen: { type: Date, default: Date.now }
+});
+
+const User = mongoose.model('BotUser', userSchema);
+
 // État des utilisateurs (pour gérer les conversations)
 const userStates = {};
 // Stocker l'ID du dernier message pour chaque chat
 const activeMessages = {};
 // Stocker les utilisateurs qui ont interagi avec le bot
-let usersData = {};
 const users = new Set();
 // Stocker les administrateurs
 let admins = new Set([ADMIN_ID]);
@@ -85,46 +98,70 @@ let admins = new Set([ADMIN_ID]);
 // Temps de démarrage du bot
 const botStartTime = new Date();
 
-// Charger la configuration et les données au démarrage
-let config = loadConfig();
+// Configuration globale
+let config = {};
 
 // Initialiser les données au démarrage
-function initializeData() {
-    // Charger les utilisateurs
-    usersData = loadUsers();
-    Object.keys(usersData).forEach(userId => users.add(parseInt(userId)));
-    
-    // Charger les admins
-    admins = loadAdmins();
-    if (!admins.has(ADMIN_ID)) {
-        admins.add(ADMIN_ID);
+async function initializeData() {
+    try {
+        // Charger la configuration depuis MongoDB
+        config = await loadConfig();
+        console.log('✅ Configuration chargée depuis MongoDB');
+        
+        // Charger les utilisateurs depuis MongoDB
+        const dbUsers = await User.find();
+        dbUsers.forEach(user => {
+            users.add(user.userId);
+            if (user.isAdmin) {
+                admins.add(user.userId);
+            }
+        });
+        console.log(`✅ ${users.size} utilisateurs chargés`);
+        console.log(`✅ ${admins.size} administrateurs chargés`);
+    } catch (error) {
+        console.error('❌ Erreur initialisation:', error);
+        config = await loadConfig(); // Essayer de charger la config par défaut
     }
-    
-    console.log(`✅ ${users.size} utilisateurs chargés`);
-    console.log(`✅ ${admins.size} administrateurs chargés`);
 }
 
 // Initialiser les données
 initializeData();
 
-// Fonction pour sauvegarder un utilisateur
-async function saveUser(userId, userInfo) {
-    users.add(userId);
-    usersData[userId] = {
-        userId,
-        username: userInfo.username,
-        firstName: userInfo.first_name,
-        lastName: userInfo.last_name,
-        isAdmin: admins.has(userId),
-        firstSeen: usersData[userId]?.firstSeen || new Date().toISOString(),
-        lastSeen: new Date().toISOString()
-    };
-    saveUsers(usersData);
+// Fonction pour sauvegarder un utilisateur dans MongoDB
+async function saveUser(userId, userInfo = {}) {
+    try {
+        await User.findOneAndUpdate(
+            { userId },
+            {
+                userId,
+                username: userInfo.username,
+                firstName: userInfo.first_name,
+                lastName: userInfo.last_name,
+                lastSeen: new Date()
+            },
+            { upsert: true, new: true }
+        );
+        users.add(userId);
+    } catch (error) {
+        console.error('Erreur sauvegarde utilisateur:', error);
+    }
 }
 
-// Fonction pour sauvegarder les admins
-function saveAdminsData() {
-    saveAdmins(admins);
+// Fonction pour sauvegarder les admins dans MongoDB
+async function saveAdminsData() {
+    try {
+        // Mettre à jour le statut admin des utilisateurs
+        for (const adminId of admins) {
+            await User.findOneAndUpdate(
+                { userId: adminId },
+                { isAdmin: true },
+                { upsert: true }
+            );
+        }
+        console.log('✅ Admins sauvegardés');
+    } catch (error) {
+        console.error('❌ Erreur sauvegarde admins:', error);
+    }
 }
 
 // Fonction pour supprimer l'ancien message actif
@@ -403,10 +440,9 @@ bot.onText(/\/reset/, async (msg) => {
         return;
     }
     
-    const { resetConfig } = require('./config');
-    config = resetConfig();
+    config = await resetConfig();
     
-    await sendNewMessage(chatId, '🔄 Configuration réinitialisée avec succès!\n\nLa configuration par défaut LAMAINVERTE a été restaurée.', {
+    await sendNewMessage(chatId, '🔄 Configuration réinitialisée avec succès!\n\nLa configuration par défaut Caligaz a été restaurée.', {
         reply_markup: {
             inline_keyboard: [[
                 { text: '🔧 Menu Admin', callback_data: 'admin_menu' },

@@ -1,60 +1,124 @@
-const fs = require('fs-extra');
-const path = require('path');
+const mongoose = require('mongoose');
+require('dotenv').config();
 
-// Dossier pour stocker les images
-const IMAGES_DIR = path.join(__dirname, 'images');
-fs.ensureDirSync(IMAGES_DIR);
-
-// Chemin du fichier de configuration
-const CONFIG_FILE = path.join(__dirname, 'config.json');
-const USERS_FILE = path.join(__dirname, 'users.json');
-const ADMINS_FILE = path.join(__dirname, 'admins.json');
-
-// Configuration par défaut LAMAINVERTE
-const defaultConfig = {
-    welcomeMessage: "🌿 Bienvenue {firstname} sur LAMAINVERTE!\n\n🛍️ Découvrez notre boutique en ligne de produits naturels et bio.\n\nUtilisez les boutons ci-dessous pour naviguer.",
-    welcomeImage: null,
-    infoText: "ℹ️ À propos de LAMAINVERTE\n\n🌿 LAMAINVERTE est votre boutique en ligne spécialisée dans les produits naturels et biologiques.\n\n✅ Produits 100% naturels\n✅ Livraison rapide\n✅ Service client réactif\n\nVisitez notre boutique en ligne pour découvrir tous nos produits!",
-    miniApp: {
-        url: "https://lamainverte.onrender.com",
-        text: "🛍️ Boutique LAMAINVERTE"
-    },
-    socialNetworks: [
-        { name: "Instagram", url: "https://instagram.com/lamainverte", emoji: "📷" },
-        { name: "Facebook", url: "https://facebook.com/lamainverte", emoji: "👍" },
-        { name: "WhatsApp", url: "https://wa.me/", emoji: "💬" },
-        { name: "Telegram", url: "https://t.me/lamainverte", emoji: "✈️" },
-        { name: "Site Web", url: "https://lamainverte.onrender.com", emoji: "🌐" }
-    ],
-    socialButtonsPerRow: 3,
-    lastModified: new Date().toISOString()
+// Connexion MongoDB avec options améliorées
+const mongoOptions = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
 };
 
-// Charger la configuration depuis le fichier local
-function loadConfig() {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/telegram-bot', mongoOptions)
+    .then(() => {
+        console.log('✅ Connecté à MongoDB');
+        console.log('📍 Database:', mongoose.connection.name);
+    })
+    .catch(err => {
+        console.error('❌ Erreur connexion MongoDB:', err);
+        process.exit(1);
+    });
+
+// Schéma pour la configuration du bot
+const configSchema = new mongoose.Schema({
+    botId: { type: String, default: 'main', unique: true, required: true },
+    welcomeMessage: { type: String, default: "⛽️ Bienvenue {firstname} chez CaliGaz !\n\n🚗 Station-service de qualité\n⛽️ Carburants et services premium\n🔧 Entretien et accessoires auto\n\nUtilisez les boutons ci-dessous pour naviguer." },
+    welcomeImage: { type: String, default: null },
+    infoText: { type: String, default: "⛽️ À propos de CaliGaz\n\n🚗 Station-service moderne\n⛽️ Carburants de qualité supérieure\n🔧 Services d'entretien complets\n🛢️ Lubrifiants et accessoires\n📱 Service client disponible\n\n✨ Votre satisfaction est notre carburant !" },
+    miniApp: {
+        url: { type: String, default: null },
+        text: { type: String, default: "⛽️ Boutique CaliGaz" }
+    },
+    socialNetworks: [{
+        name: String,
+        url: String,
+        emoji: String
+    }],
+    socialButtonsPerRow: { type: Number, default: 3 },
+    lastModified: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+const Config = mongoose.model('BotConfig', configSchema);
+
+// Configuration par défaut
+const defaultConfig = {
+    botId: 'main',
+    welcomeMessage: "⛽️ Bienvenue {firstname} chez CaliGaz !\n\n🚗 Station-service de qualité\n⛽️ Carburants et services premium\n🔧 Entretien et accessoires auto\n\nUtilisez les boutons ci-dessous pour naviguer.",
+    welcomeImage: "https://i.imgur.com/F1Hopru.jpeg",
+    infoText: "⛽️ À propos de CaliGaz\n\n🚗 Station-service moderne\n⛽️ Carburants de qualité supérieure\n🔧 Services d'entretien complets\n🛢️ Lubrifiants et accessoires\n📱 Service client disponible\n\n✨ Votre satisfaction est notre carburant !",
+    miniApp: {
+        url: "https://caligaz.vercel.app",
+        text: "⛽️ Boutique CaliGaz"
+    },
+    socialNetworks: [
+        { name: "Telegram", url: "https://t.me/caligaz_shop", emoji: "✈️" },
+        { name: "Instagram", url: "https://instagram.com/caligaz", emoji: "📷" },
+        { name: "WhatsApp", url: "https://wa.me/33123456789", emoji: "💬" }
+    ],
+    socialButtonsPerRow: 3
+};
+
+// Charger la configuration depuis MongoDB
+async function loadConfig() {
     try {
-        if (fs.existsSync(CONFIG_FILE)) {
-            const config = fs.readJsonSync(CONFIG_FILE);
-            console.log('✅ Configuration chargée depuis config.json');
-            return config;
-        } else {
+        console.log('📖 Chargement de la configuration...');
+        let config = await Config.findOne({ botId: 'main' }).lean();
+        
+        if (!config) {
             console.log('⚠️ Aucune configuration trouvée, création de la configuration par défaut...');
-            fs.writeJsonSync(CONFIG_FILE, defaultConfig, { spaces: 2 });
+            config = await Config.create(defaultConfig);
             console.log('✅ Configuration par défaut créée');
-            return defaultConfig;
+            return config.toObject();
         }
+        
+        console.log('✅ Configuration chargée:', {
+            welcomeMessage: config.welcomeMessage?.substring(0, 50) + '...',
+            welcomeImage: config.welcomeImage ? 'Définie' : 'Non définie',
+            socialNetworks: config.socialNetworks?.length || 0,
+            lastModified: config.lastModified
+        });
+        
+        return config;
     } catch (error) {
         console.error('❌ Erreur lors du chargement de la configuration:', error);
         return defaultConfig;
     }
 }
 
-// Sauvegarder la configuration dans le fichier local
-function saveConfig(config) {
+// Sauvegarder la configuration dans MongoDB
+async function saveConfig(configData) {
     try {
-        config.lastModified = new Date().toISOString();
-        fs.writeJsonSync(CONFIG_FILE, config, { spaces: 2 });
-        console.log('✅ Configuration sauvegardée dans config.json');
+        console.log('💾 Sauvegarde de la configuration...');
+        
+        // Nettoyer les données avant sauvegarde
+        const dataToSave = {
+            botId: 'main',
+            welcomeMessage: configData.welcomeMessage,
+            welcomeImage: configData.welcomeImage,
+            infoText: configData.infoText,
+            miniApp: configData.miniApp,
+            socialNetworks: configData.socialNetworks,
+            socialButtonsPerRow: configData.socialButtonsPerRow || 3,
+            lastModified: new Date()
+        };
+        
+        const config = await Config.findOneAndUpdate(
+            { botId: 'main' },
+            { $set: dataToSave },
+            { 
+                new: true, 
+                upsert: true,
+                runValidators: true
+            }
+        );
+        
+        console.log('✅ Configuration sauvegardée avec succès');
+        console.log('📝 Détails sauvegardés:', {
+            welcomeMessage: config.welcomeMessage?.substring(0, 50) + '...',
+            welcomeImage: config.welcomeImage ? 'Définie' : 'Non définie',
+            socialNetworks: config.socialNetworks?.length || 0
+        });
+        
         return true;
     } catch (error) {
         console.error('❌ Erreur lors de la sauvegarde de la configuration:', error);
@@ -62,82 +126,29 @@ function saveConfig(config) {
     }
 }
 
-// Charger les utilisateurs
-function loadUsers() {
+// Réinitialiser la configuration (utile pour debug)
+async function resetConfig() {
     try {
-        if (fs.existsSync(USERS_FILE)) {
-            return fs.readJsonSync(USERS_FILE);
-        }
-        return {};
-    } catch (error) {
-        console.error('❌ Erreur lors du chargement des utilisateurs:', error);
-        return {};
-    }
-}
-
-// Sauvegarder les utilisateurs
-function saveUsers(users) {
-    try {
-        fs.writeJsonSync(USERS_FILE, users, { spaces: 2 });
-        return true;
-    } catch (error) {
-        console.error('❌ Erreur lors de la sauvegarde des utilisateurs:', error);
-        return false;
-    }
-}
-
-// Charger les admins
-function loadAdmins() {
-    try {
-        if (fs.existsSync(ADMINS_FILE)) {
-            return new Set(fs.readJsonSync(ADMINS_FILE));
-        }
-        return new Set([parseInt(process.env.ADMIN_ID)]);
-    } catch (error) {
-        console.error('❌ Erreur lors du chargement des admins:', error);
-        return new Set([parseInt(process.env.ADMIN_ID)]);
-    }
-}
-
-// Sauvegarder les admins
-function saveAdmins(admins) {
-    try {
-        fs.writeJsonSync(ADMINS_FILE, Array.from(admins), { spaces: 2 });
-        return true;
-    } catch (error) {
-        console.error('❌ Erreur lors de la sauvegarde des admins:', error);
-        return false;
-    }
-}
-
-// Réinitialiser la configuration
-function resetConfig() {
-    try {
-        fs.writeJsonSync(CONFIG_FILE, defaultConfig, { spaces: 2 });
+        await Config.deleteOne({ botId: 'main' });
+        const newConfig = await Config.create(defaultConfig);
         console.log('🔄 Configuration réinitialisée');
-        return defaultConfig;
+        return newConfig.toObject();
     } catch (error) {
         console.error('❌ Erreur lors de la réinitialisation:', error);
         return defaultConfig;
     }
 }
 
-// Obtenir le chemin d'une image
-function getImagePath(imageName) {
-    if (!imageName) return null;
-    if (imageName.startsWith('http')) return imageName;
-    return path.join(IMAGES_DIR, imageName);
+// Obtenir l'URL d'une image (stockée dans Cloudinary ou base64)
+function getImagePath(imageUrl) {
+    return imageUrl; // Retourne directement l'URL ou file_id Telegram
 }
 
 module.exports = {
     loadConfig,
     saveConfig,
-    loadUsers,
-    saveUsers,
-    loadAdmins,
-    saveAdmins,
     resetConfig,
     getImagePath,
-    IMAGES_DIR,
-    defaultConfig
+    Config, // Exporter le modèle pour debug si nécessaire
+    IMAGES_DIR: null // Plus utilisé avec MongoDB
 };
