@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import MediaUploader from './MediaUploader';
 import CloudinaryUploader from './CloudinaryUploader';
 import CloudinaryDirectUploader from './CloudinaryDirectUploader';
+import { appEvents, EVENTS } from '@/lib/events';
 
 interface Product {
   _id?: string;
@@ -62,6 +63,35 @@ export default function ProductsManager() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Écouter les événements de mise à jour des catégories et farms
+  useEffect(() => {
+    const handleCategoriesUpdate = () => {
+      console.log('📢 Catégories mises à jour, rechargement...');
+      loadData();
+      if (formData.menu) {
+        loadCategoriesAndFarmsByMenu(formData.menu);
+      }
+    };
+    
+    const handleFarmsUpdate = () => {
+      console.log('📢 Farms mises à jour, rechargement...');
+      loadData();
+      if (formData.menu) {
+        loadCategoriesAndFarmsByMenu(formData.menu);
+      }
+    };
+    
+    // S'abonner aux événements
+    appEvents.on(EVENTS.CATEGORIES_UPDATED, handleCategoriesUpdate);
+    appEvents.on(EVENTS.FARMS_UPDATED, handleFarmsUpdate);
+    
+    // Se désabonner lors du démontage
+    return () => {
+      appEvents.off(EVENTS.CATEGORIES_UPDATED, handleCategoriesUpdate);
+      appEvents.off(EVENTS.FARMS_UPDATED, handleFarmsUpdate);
+    };
+  }, [formData.menu]);
 
   // Charger les catégories et farms quand le menu du formulaire change
   useEffect(() => {
@@ -441,6 +471,9 @@ export default function ProductsManager() {
         // Recharger les données
         await loadData();
         
+        // Émettre l'événement pour rafraîchir les produits côté client
+        appEvents.emit(EVENTS.PRODUCTS_UPDATED);
+        
         // Forcer un refresh de la page boutique si elle est ouverte
         if (window.opener || window.parent !== window) {
           try {
@@ -510,6 +543,9 @@ export default function ProductsManager() {
         }, 3000);
 
         console.log('✅ Produit supprimé avec succès:', productId);
+        
+        // Émettre l'événement pour rafraîchir les produits côté client
+        appEvents.emit(EVENTS.PRODUCTS_UPDATED);
       } else {
         // Erreur côté serveur
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
