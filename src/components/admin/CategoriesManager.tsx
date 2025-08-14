@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { appEvents, EVENTS } from '@/lib/events';
 
 interface Category {
   _id?: string;
@@ -38,22 +37,6 @@ export default function CategoriesManager() {
 
   useEffect(() => {
     fetchData();
-  }, []);
-
-  // Écouter les événements de mise à jour des catégories
-  useEffect(() => {
-    const handleCategoriesUpdate = () => {
-      console.log('📢 Événement CATEGORIES_UPDATED reçu, rechargement des catégories...');
-      fetchData();
-    };
-    
-    // S'abonner à l'événement
-    appEvents.on(EVENTS.CATEGORIES_UPDATED, handleCategoriesUpdate);
-    
-    // Se désabonner lors du démontage
-    return () => {
-      appEvents.off(EVENTS.CATEGORIES_UPDATED, handleCategoriesUpdate);
-    };
   }, []);
 
   const fetchData = async () => {
@@ -121,6 +104,9 @@ export default function CategoriesManager() {
         const category = await response.json();
         console.log('✅ Catégorie créée:', category);
         
+        // Recharger les données immédiatement
+        await fetchData();
+        
         setNewCategory({
           name: '',
           slug: '',
@@ -131,8 +117,6 @@ export default function CategoriesManager() {
         });
         setIsCreating(false);
         toast.success('Catégorie créée avec succès');
-        // Émettre l'événement pour rafraîchir les catégories partout (y compris ici)
-        appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -162,10 +146,11 @@ export default function CategoriesManager() {
         const updatedCategory = await response.json();
         console.log('✅ Catégorie mise à jour:', updatedCategory);
         
+        // Recharger les données immédiatement
+        await fetchData();
+        
         setEditingCategory(null);
         toast.success('Catégorie mise à jour avec succès');
-        // Émettre l'événement pour rafraîchir les catégories partout (y compris ici)
-        appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de mise à jour:', error);
@@ -195,10 +180,11 @@ export default function CategoriesManager() {
       console.log('📊 Réponse de suppression:', response.status);
 
       if (response.ok) {
-        toast.success('Catégorie supprimée avec succès');
         console.log('✅ Catégorie supprimée avec succès');
-        // Émettre l'événement pour rafraîchir les catégories partout (y compris ici)
-        appEvents.emit(EVENTS.CATEGORIES_UPDATED);
+        toast.success('Catégorie supprimée avec succès');
+        
+        // Recharger les données immédiatement
+        await fetchData();
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
         console.error('❌ Erreur de suppression:', errorData);
