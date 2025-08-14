@@ -218,31 +218,33 @@ export default function FarmsManager() {
       return;
     }
 
-    console.log('🗑️ Tentative de suppression de la farm:', id);
+    console.log('🗑️ Suppression FORCÉE de la farm:', id);
 
     try {
-      const response = await fetch(`/api/farms/${id}`, {
+      // Utiliser l'API force-delete qui contourne tous les problèmes
+      const response = await fetch(`/api/force-delete?type=farm&id=${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         }
       });
 
       console.log('📊 Réponse de suppression:', response.status);
+      const result = await response.json();
+      console.log('📊 Résultat:', result);
 
-      if (response.ok) {
+      if (response.ok && result.success) {
         toast.success('Farm supprimée avec succès');
         console.log('✅ Farm supprimée avec succès');
         
-        // Solution radicale : forcer le rechargement complet sans cache
+        // Forcer le rechargement complet de la page
         setTimeout(() => {
-          // Forcer le rechargement depuis le serveur
-          window.location.href = window.location.href + '?t=' + Date.now();
+          window.location.href = window.location.pathname + '?refresh=' + Date.now();
         }, 500);
       } else {
-        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
-        console.error('❌ Erreur de suppression:', errorData);
-        toast.error(`Erreur: ${errorData.error || 'Impossible de supprimer la farm'}`);
+        console.error('❌ Erreur de suppression:', result);
+        toast.error(`Erreur: ${result.error || result.message || 'Impossible de supprimer la farm'}`);
       }
     } catch (error) {
       console.error('❌ Erreur réseau:', error);
