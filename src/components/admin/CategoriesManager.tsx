@@ -127,19 +127,15 @@ export default function CategoriesManager() {
       if (response.ok) {
         const category = await response.json();
         console.log('✅ Catégorie créée:', category);
+        
+        // Ajouter directement la nouvelle catégorie à la liste
+        setCategories(prev => [...prev, category]);
+        
+        // Réinitialiser le formulaire
+        setNewCategory({ name: '', slug: '', description: '', menu: '', order: 0 });
+        setIsCreating(false);
+        
         toast.success('Catégorie créée avec succès');
-        
-        // Nettoyer tous les caches possibles
-        if (typeof window !== 'undefined') {
-          sessionStorage.clear();
-          localStorage.clear();
-        }
-        
-        // Attendre un peu pour que MongoDB se synchronise
-        setTimeout(() => {
-          // Forcer un rechargement COMPLET depuis le serveur
-          window.location.replace(window.location.pathname + '?refresh=' + Date.now());
-        }, 1000);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -152,11 +148,9 @@ export default function CategoriesManager() {
   };
 
   const handleUpdate = async () => {
-    if (!editingCategory || !editingCategory._id) return;
+    if (!editingCategory) return;
 
     try {
-      console.log('📝 Mise à jour de la catégorie:', editingCategory);
-
       const response = await fetch(`/api/categories/${editingCategory._id}`, {
         method: 'PUT',
         headers: {
@@ -169,20 +163,19 @@ export default function CategoriesManager() {
         const updatedCategory = await response.json();
         console.log('✅ Catégorie mise à jour:', updatedCategory);
         
-        toast.success('Catégorie mise à jour avec succès');
+        // Mettre à jour directement dans la liste
+        setCategories(prev => 
+          prev.map(cat => cat._id === updatedCategory._id ? updatedCategory : cat)
+        );
         
-        // Solution radicale : recharger la page
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
+        setEditingCategory(null);
+        toast.success('Catégorie mise à jour avec succès');
       } else {
-        const error = await response.json();
-        console.error('❌ Erreur de mise à jour:', error);
-        toast.error(error.error || 'Erreur lors de la mise à jour');
+        toast.error('Erreur lors de la mise à jour');
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      toast.error('Erreur lors de la mise à jour');
+      toast.error('Erreur lors de la mise à jour de la catégorie');
     }
   };
 
@@ -200,19 +193,11 @@ export default function CategoriesManager() {
 
       if (response.ok) {
         console.log('✅ Catégorie supprimée');
+        
+        // Supprimer directement de la liste
+        setCategories(prev => prev.filter(cat => cat._id !== id));
+        
         toast.success('Catégorie supprimée avec succès');
-        
-        // Nettoyer tous les caches possibles
-        if (typeof window !== 'undefined') {
-          sessionStorage.clear();
-          localStorage.clear();
-        }
-        
-        // Attendre un peu pour que MongoDB se synchronise
-        setTimeout(() => {
-          // Forcer un rechargement COMPLET depuis le serveur
-          window.location.replace(window.location.pathname + '?refresh=' + Date.now());
-        }, 1000);
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);

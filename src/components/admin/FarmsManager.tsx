@@ -134,11 +134,15 @@ export default function FarmsManager() {
       if (response.ok) {
         const farm = await response.json();
         console.log('✅ Farm créée:', farm);
-        toast.success('Farm créée avec succès');
         
-        // Forcer un rechargement COMPLET avec nouveau timestamp
-        const newUrl = window.location.pathname + '?t=' + Date.now();
-        window.location.href = newUrl;
+        // Ajouter directement la nouvelle farm à la liste
+        setFarms(prev => [...prev, farm]);
+        
+        // Réinitialiser le formulaire
+        setNewFarm({ name: '', slug: '', menu: '', order: 0 });
+        setIsCreating(false);
+        
+        toast.success('Farm créée avec succès');
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -151,11 +155,9 @@ export default function FarmsManager() {
   };
 
   const handleUpdate = async () => {
-    if (!editingFarm || !editingFarm._id) return;
+    if (!editingFarm) return;
 
     try {
-      console.log('📝 Mise à jour de la farm:', editingFarm);
-
       const response = await fetch(`/api/farms/${editingFarm._id}`, {
         method: 'PUT',
         headers: {
@@ -168,20 +170,19 @@ export default function FarmsManager() {
         const updatedFarm = await response.json();
         console.log('✅ Farm mise à jour:', updatedFarm);
         
-        toast.success('Farm mise à jour avec succès');
+        // Mettre à jour directement dans la liste
+        setFarms(prev => 
+          prev.map(farm => farm._id === updatedFarm._id ? updatedFarm : farm)
+        );
         
-        // Solution radicale : recharger la page
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
+        setEditingFarm(null);
+        toast.success('Farm mise à jour avec succès');
       } else {
-        const error = await response.json();
-        console.error('❌ Erreur de mise à jour:', error);
-        toast.error(error.error || 'Erreur lors de la mise à jour');
+        toast.error('Erreur lors de la mise à jour');
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      toast.error('Erreur lors de la mise à jour');
+      toast.error('Erreur lors de la mise à jour de la farm');
     }
   };
 
@@ -199,11 +200,11 @@ export default function FarmsManager() {
 
       if (response.ok) {
         console.log('✅ Farm supprimée');
-        toast.success('Farm supprimée avec succès');
         
-        // Forcer un rechargement COMPLET avec nouveau timestamp
-        const newUrl = window.location.pathname + '?t=' + Date.now();
-        window.location.href = newUrl;
+        // Supprimer directement de la liste
+        setFarms(prev => prev.filter(farm => farm._id !== id));
+        
+        toast.success('Farm supprimée avec succès');
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);
