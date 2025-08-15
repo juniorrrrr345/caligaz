@@ -80,13 +80,13 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     <div key={refreshKey} className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Desktop: Sidebar + Content */}
       <div className="hidden lg:flex">
-        {/* Sidebar Desktop avec style ÎLE DE FRANCE FULL OPTION */}
+        {/* Sidebar Desktop avec style CaliGaz */}
         <aside className="w-72 bg-gradient-to-b from-black via-gray-900 to-black border-r border-white/10 min-h-screen sticky top-0">
           <div className="p-6 border-b border-white/10">
             <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-purple-600 animate-pulse">
-              ÎLE DE FRANCE
+              CaliGaz ⛽
             </h1>
-            <p className="text-xs text-white/60 mt-1 tracking-[0.3em] uppercase">Full Option Admin</p>
+            <p className="text-xs text-white/60 mt-1 tracking-[0.3em] uppercase">Panel Admin</p>
           </div>
           
           <nav className="p-4">
@@ -135,7 +135,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-white/10 sticky top-0 z-50">
           <div className="flex items-center justify-between p-4">
             <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-purple-600">
-              ÎLE DE FRANCE
+              CaliGaz ⛽
             </h1>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
