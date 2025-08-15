@@ -44,6 +44,9 @@ export default function FarmsManager() {
       setLoading(true);
       console.log('🔄 Début du chargement des données...');
       
+      // IMPORTANT: Vider complètement les farms AVANT de recharger
+      setFarms([]);
+      
       // Charger les menus
       console.log('📋 Chargement des menus...');
       const menusRes = await fetch('/api/menus');
@@ -67,7 +70,8 @@ export default function FarmsManager() {
         farmsData.forEach((farm: any) => {
           console.log(`  - ${farm.name} (Menu: ${farm.menu}, ID: ${farm._id})`);
         });
-        setFarms(farmsData);
+        // S'assurer de créer un nouveau tableau
+        setFarms([...farmsData]);
       } else {
         console.error('❌ Erreur farms:', farmsRes.status);
         setFarms([]);
@@ -134,6 +138,14 @@ export default function FarmsManager() {
         // Réinitialiser le formulaire
         setNewFarm({ name: '', slug: '', menu: 'caligaz', order: 0, isActive: true });
         setIsCreating(false);
+        
+        // Forcer la synchronisation immédiate (comme dans ProductsManager)
+        try {
+          const cacheResponse = await fetch('/api/cache/invalidate', { method: 'POST' });
+          console.log('🔄 Cache invalidé:', cacheResponse.ok);
+        } catch (error) {
+          console.error('Erreur invalidation cache:', error);
+        }
         
         // Recharger les données comme dans ProductsManager
         await fetchData();

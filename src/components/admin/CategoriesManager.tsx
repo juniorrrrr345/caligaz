@@ -45,6 +45,9 @@ export default function CategoriesManager() {
       setLoading(true);
       console.log('🔄 Début du chargement des données...');
       
+      // IMPORTANT: Vider complètement les catégories AVANT de recharger
+      setCategories([]);
+      
       // Charger les menus
       console.log('📋 Chargement des menus...');
       const menusRes = await fetch('/api/menus');
@@ -68,7 +71,8 @@ export default function CategoriesManager() {
         categoriesData.forEach((cat: any) => {
           console.log(`  - ${cat.name} (Menu: ${cat.menu}, ID: ${cat._id})`);
         });
-        setCategories(categoriesData);
+        // S'assurer de créer un nouveau tableau
+        setCategories([...categoriesData]);
       } else {
         console.error('❌ Erreur catégories:', categoriesRes.status);
         setCategories([]);
@@ -136,6 +140,14 @@ export default function CategoriesManager() {
         // Réinitialiser le formulaire
         setNewCategory({ name: '', slug: '', description: '', menu: 'caligaz', order: 0, isActive: true });
         setIsCreating(false);
+        
+        // Forcer la synchronisation immédiate (comme dans ProductsManager)
+        try {
+          const cacheResponse = await fetch('/api/cache/invalidate', { method: 'POST' });
+          console.log('🔄 Cache invalidé:', cacheResponse.ok);
+        } catch (error) {
+          console.error('Erreur invalidation cache:', error);
+        }
         
         // Recharger les données comme dans ProductsManager
         await fetchData();
