@@ -51,15 +51,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // AUCUNE LIMITE de taille pour TOUS les fichiers
+    // Images, vidéos, GIFs - tout est autorisé
     const isVideo = file.type.startsWith('video/') || file.type === 'image/gif';
-    const maxSize = 10 * 1024 * 1024; // 10MB pour images statiques seulement
-    
-    // Pas de limite pour les vidéos ET GIFs, limite seulement pour les images statiques
-    if (!isVideo && file.size > maxSize) {
-      return NextResponse.json({ 
-        error: `Image trop volumineuse: ${Math.round(file.size / 1024 / 1024)}MB. Maximum 10MB pour les images` 
-      }, { status: 400 });
-    }
 
     console.log('☁️ Upload vers Cloudinary...');
 

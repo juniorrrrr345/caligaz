@@ -20,14 +20,8 @@ export default function CloudinaryUploader({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const isVideo = file.type.startsWith('video/') || file.type === 'image/gif';
-    const maxSize = 10 * 1024 * 1024; // 10MB pour images statiques seulement
-    
-    // Pas de limite pour les vidéos ET GIFs, limite seulement pour les images statiques
-    if (!isVideo && file.size > maxSize) {
-      setError(`Image trop volumineuse: ${Math.round(file.size / 1024 / 1024)}MB. Maximum 10MB pour les images`);
-      return;
-    }
+    // AUCUNE LIMITE pour TOUS les fichiers (images, vidéos, GIFs)
+    // Tout est autorisé sans restriction de taille
 
     setUploading(true);
     setError('');
@@ -121,7 +115,7 @@ export default function CloudinaryUploader({
           </label>
           
           <span className="text-sm text-gray-400">
-            Images (10MB) & Vidéos/GIFs (AUCUNE LIMITE) - Hébergement cloud
+            AUCUNE LIMITE - Images, Vidéos, GIFs - Hébergement cloud
           </span>
         </div>
 
