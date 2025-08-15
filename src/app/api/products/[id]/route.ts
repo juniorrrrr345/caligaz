@@ -19,6 +19,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const { _id, createdAt, __v, ...updateData } = data;
     updateData.updatedAt = new Date();
     
+    // Valider et attribuer le menu
+    if (updateData.menu && !['principal', 'barcelone'].includes(updateData.menu)) {
+      console.log('⚠️ Menu invalide reçu:', updateData.menu, 'attribution par défaut: principal');
+      updateData.menu = 'principal';
+    }
+    
     console.log('🔄 Données nettoyées pour update:', updateData);
     
     // Validation des données avant update

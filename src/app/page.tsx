@@ -128,7 +128,7 @@ export default function HomePage() {
     const loadFreshData = async () => {
       try {
         const [productsRes, categoriesRes, farmsRes] = await Promise.all([
-          fetch('/api/products', { cache: 'no-store' }),
+          fetch(`/api/products?menu=${selectedMenu}`, { cache: 'no-store' }),
           fetch(`/api/categories?menu=${selectedMenu}`, { cache: 'no-store' }),
           fetch(`/api/farms?menu=${selectedMenu}`, { cache: 'no-store' })
         ]);

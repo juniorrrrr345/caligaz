@@ -76,7 +76,12 @@ export default function ProductsManager() {
       // Charger les produits avec filtre de menu
       console.log('📦 Chargement des produits...');
       const menuParam = selectedMenuFilter !== 'all' ? `?menu=${selectedMenuFilter}` : '';
-      const productsRes = await fetch(`/api/products${menuParam}`);
+      const productsRes = await fetch(`/api/products/all${menuParam}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       console.log('📦 Réponse produits:', productsRes.status);
       if (productsRes.ok) {
         const productsData = await productsRes.json();
