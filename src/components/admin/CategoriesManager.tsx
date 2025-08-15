@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { appEvents, EVENTS } from '@/lib/events';
@@ -27,6 +27,7 @@ export default function CategoriesManager() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
   const [newCategory, setNewCategory] = useState<Category>({
     name: '',
@@ -38,6 +39,9 @@ export default function CategoriesManager() {
 
   // Charger les données au montage UNIQUEMENT
   useEffect(() => {
+    if (hasLoadedRef.current) return; // Éviter les doubles chargements
+    hasLoadedRef.current = true;
+    
     const loadData = async () => {
       try {
         setLoading(true);
