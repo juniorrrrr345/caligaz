@@ -15,11 +15,26 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
+    // Nettoyer les anciennes données en cache
+    try {
+      const shopSettings = localStorage.getItem('shopSettings');
+      if (shopSettings) {
+        const parsed = JSON.parse(shopSettings);
+        if (parsed.shopTitle && (parsed.shopTitle.includes('FULL OPTION') || parsed.shopTitle.includes('IDFFULL'))) {
+          localStorage.removeItem('shopSettings');
+          console.log('🧹 Nettoyage anciens settings');
+        }
+      }
+    } catch (e) {
+      console.log('🧹 Nettoyage général du cache');
+      localStorage.clear();
+    }
+    
     // Charger depuis le cache instantané
     const loadData = async () => {
       try {
-              await contentCache.initialize();
-      const settings = contentCache.getSettings();
+        await contentCache.initialize();
+        const settings = contentCache.getSettings();
         
         setBackgroundSettings({
           backgroundImage: settings?.backgroundImage || '',
