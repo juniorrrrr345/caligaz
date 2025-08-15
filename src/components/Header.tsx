@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import contentCache from '@/lib/contentCache';
 import { useCartStore } from '@/lib/cartStore';
-import { ShoppingCart, ArrowLeft } from 'lucide-react';
-import { MenuType } from '@/types';
+import { ShoppingCart } from 'lucide-react';
+import { useMenu } from '@/contexts/MenuContext';
 
 interface Settings {
   shopTitle: string;
@@ -13,13 +13,9 @@ interface Settings {
   scrollingText: string;
 }
 
-interface HeaderProps {
-  selectedMenu?: MenuType;
-  onBackToMenuSelection?: () => void;
-}
-
-export default function Header({ selectedMenu, onBackToMenuSelection }: HeaderProps) {
+export default function Header() {
   const { getTotalItems, setIsOpen } = useCartStore();
+  const { selectedMenu, clearSelectedMenu } = useMenu();
   const totalItems = getTotalItems();
   
   // Forcer les données du cache instantané - JAMAIS d'ancien contenu
@@ -67,110 +63,93 @@ export default function Header({ selectedMenu, onBackToMenuSelection }: HeaderPr
           localStorage.setItem('adminSettings', JSON.stringify(data));
         })
         .catch(() => {});
-    }, 100);
+    }, 50);
   }, []);
 
-  const getMenuDisplayInfo = () => {
-    if (selectedMenu === 'barcelone') {
-      return {
-        icon: '🇪🇸',
-        title: 'Barcelone',
-        subtitle: 'Sélection Espagnole'
-      };
+  const getTitleClass = () => {
+    const baseClass = "text-responsive-lg sm:text-responsive-xl md:text-responsive-2xl font-black tracking-wider transition-all duration-300 text-center line-height-tight";
+    
+    switch (settings.titleStyle) {
+      case 'gradient':
+        return `${baseClass} bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent`;
+      case 'neon':
+        return `${baseClass} text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]`;
+      case 'rainbow':
+        return `${baseClass} bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent animate-pulse`;
+      case 'glow':
+        return `${baseClass} text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]`;
+      case 'shadow':
+        return `${baseClass} text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)]`;
+      case 'bounce':
+        return `${baseClass} text-white animate-bounce`;
+      case 'graffiti':
+        return `graffiti-text text-responsive-lg sm:text-responsive-xl md:text-responsive-2xl font-normal`;
+      default:
+        return `${baseClass} text-white`;
     }
-    return {
-      icon: '⛽',
-      title: 'CaliGaz',
-      subtitle: 'Menu Principal'
-    };
   };
 
-  const menuInfo = getMenuDisplayInfo();
-
   return (
-    <header className="bg-black/90 backdrop-blur-sm border-b border-white/20 sticky top-0 z-40">
-      <div className="px-4 py-3">
-        {/* Header principal */}
-        <div className="flex items-center justify-between">
-          {/* Zone gauche : Menu sélectionné */}
-          <div className="flex items-center gap-3">
-            {onBackToMenuSelection && (
-              <button
-                onClick={onBackToMenuSelection}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-                title="Changer de menu"
-              >
-                <ArrowLeft className="w-5 h-5 text-white" />
-              </button>
-            )}
-            
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{menuInfo.icon}</span>
-              <div>
-                <h1 className="text-white font-bold text-lg leading-tight">
-                  {menuInfo.title}
-                </h1>
-                <p className="text-gray-400 text-xs">
-                  {menuInfo.subtitle}
-                </p>
-              </div>
-            </div>
+    <header className="fixed top-0 w-full z-40 bg-black/40 backdrop-blur-md safe-area-padding">
+      {/* Texte défilant - depuis l'admin */}
+      {settings.scrollingText && settings.scrollingText.trim() && (
+        <div className="bg-black/30 backdrop-blur-sm text-white py-0.5 overflow-hidden relative border-b border-white/10">
+          <div className="animate-marquee whitespace-nowrap inline-block">
+            <span className="text-xs font-bold tracking-wide px-4 text-white drop-shadow-md">
+              {settings.scrollingText}
+            </span>
           </div>
-
-          {/* Zone droite : Panier */}
-          <button 
-            onClick={() => setIsOpen(true)}
-            className="relative p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-          >
-            <ShoppingCart className="w-6 h-6 text-white" />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
-                {totalItems}
-              </span>
-            )}
-          </button>
         </div>
+      )}
+      
+      {/* Bandeau blanc promotionnel - responsive */}
+      {settings.bannerText && settings.bannerText.trim() && (
+        <div className="bg-white/90 backdrop-blur-sm text-black py-1 sm:py-2 px-3 sm:px-4 text-center">
+          <p className="text-black text-responsive-xs font-bold tracking-wide break-words">
+            {settings.bannerText}
+          </p>
+        </div>
+      )}
+      
+      {/* Logo boutique avec bouton panier - responsive optimisé */}
+      <div className="bg-black/30 backdrop-blur-md py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6 text-center border-b border-white/10 relative">
+        {/* Bouton panier en position absolue */}
+        <button
+          onClick={() => setIsOpen(true)}
+          className="absolute right-3 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 sm:p-3 rounded-lg transition-all duration-200 flex items-center gap-2 border border-white/30"
+        >
+          <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
+          {totalItems > 0 && (
+            <span className="bg-green-500 text-black text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">
+              {totalItems}
+            </span>
+          )}
+        </button>
 
-        {/* Titre de la boutique si défini */}
-        {settings.shopTitle && (
-          <div className="mt-3 text-center">
-            <h2 className={`text-white font-bold text-xl ${
-              settings.titleStyle === 'glow' ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' :
-              settings.titleStyle === 'neon' ? 'text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]' :
-              settings.titleStyle === 'rainbow' ? 'bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 bg-clip-text text-transparent' :
-              ''
-            }`}>
-              {settings.shopTitle}
-            </h2>
-            {settings.shopSubtitle && (
-              <p className="text-gray-300 text-sm mt-1">
-                {settings.shopSubtitle}
-              </p>
-            )}
-          </div>
+        {/* Bouton discret pour changer de menu - en haut à gauche */}
+        {selectedMenu && (
+          <button
+            onClick={clearSelectedMenu}
+            className="absolute left-3 sm:left-4 md:left-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs transition-all duration-200 border border-white/20"
+            title="Changer de menu"
+          >
+            {selectedMenu === 'principal' ? '⛽ CaliGaz' : '🇪🇸 Barcelone'}
+          </button>
         )}
-
-        {/* Texte de bannière défilant */}
-        {settings.bannerText && (
-          <div className="mt-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg overflow-hidden">
-            <div className="whitespace-nowrap animate-scroll">
-              <span className="inline-block py-2 px-4 text-white font-medium">
-                {settings.bannerText}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Texte défilant */}
-        {settings.scrollingText && (
-          <div className="mt-2 overflow-hidden">
-            <div className="whitespace-nowrap animate-scroll">
-              <span className="inline-block py-1 text-gray-300 text-sm">
-                {settings.scrollingText}
-              </span>
-            </div>
-          </div>
-        )}
+        
+        <div className="flex flex-col items-center justify-center">
+          <img 
+            src="https://i.imgur.com/mNencn1.png" 
+            alt={settings.shopTitle || "CaliGaz"} 
+            className="h-12 sm:h-16 md:h-20 w-auto"
+            style={{ filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))' }}
+          />
+          {settings.shopSubtitle && (
+            <p className="text-white/80 text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.1em] sm:tracking-[0.15em] md:tracking-[0.2em] font-medium mt-1 sm:mt-2 break-words drop-shadow-sm">
+              {settings.shopSubtitle}
+            </p>
+          )}
+        </div>
       </div>
     </header>
   );
