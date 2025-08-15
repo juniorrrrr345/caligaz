@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Home } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Factory } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { appEvents, EVENTS } from '@/lib/events';
 
 interface Farm {
   _id?: string;
@@ -135,14 +136,17 @@ export default function FarmsManager() {
         const farm = await response.json();
         console.log('✅ Farm créée:', farm);
         
-        // Ajouter directement la nouvelle farm à la liste
-        setFarms(prev => [...prev, farm]);
+        toast.success('Farm créée avec succès');
         
         // Réinitialiser le formulaire
         setNewFarm({ name: '', slug: '', menu: '', order: 0 });
         setIsCreating(false);
         
-        toast.success('Farm créée avec succès');
+        // Recharger les données comme dans ProductsManager
+        await fetchData();
+        
+        // Émettre l'événement pour synchroniser avec les autres composants
+        appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -170,13 +174,14 @@ export default function FarmsManager() {
         const updatedFarm = await response.json();
         console.log('✅ Farm mise à jour:', updatedFarm);
         
-        // Mettre à jour directement dans la liste
-        setFarms(prev => 
-          prev.map(farm => farm._id === updatedFarm._id ? updatedFarm : farm)
-        );
-        
-        setEditingFarm(null);
         toast.success('Farm mise à jour avec succès');
+        setEditingFarm(null);
+        
+        // Recharger les données comme dans ProductsManager
+        await fetchData();
+        
+        // Émettre l'événement pour synchroniser avec les autres composants
+        appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         toast.error('Erreur lors de la mise à jour');
       }
@@ -201,14 +206,20 @@ export default function FarmsManager() {
       if (response.ok) {
         console.log('✅ Farm supprimée');
         
-        // Supprimer directement de la liste
+        // Supprimer directement de la liste comme dans ProductsManager
         setFarms(prev => prev.filter(farm => farm._id !== id));
         
         toast.success('Farm supprimée avec succès');
+        
+        // Émettre l'événement pour synchroniser avec les autres composants
+        appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);
         toast.error('Erreur lors de la suppression');
+        
+        // Recharger les données en cas d'erreur
+        await fetchData();
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
@@ -240,7 +251,7 @@ export default function FarmsManager() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Home className="w-6 h-6" />
+            <Factory className="w-6 h-6" />
             Gestion des Farms
           </h2>
           <p className="text-gray-400 mt-1">
@@ -436,7 +447,7 @@ export default function FarmsManager() {
 
         {farms.length === 0 && (
           <div className="bg-gray-800 rounded-lg p-12 text-center border border-white/10">
-            <Home className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <Factory className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">Aucune farm créée pour le moment</p>
             <button
               onClick={() => setIsCreating(true)}

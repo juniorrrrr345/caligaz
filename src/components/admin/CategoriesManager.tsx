@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { appEvents, EVENTS } from '@/lib/events';
 
 interface Category {
   _id?: string;
@@ -128,14 +129,17 @@ export default function CategoriesManager() {
         const category = await response.json();
         console.log('✅ Catégorie créée:', category);
         
-        // Ajouter directement la nouvelle catégorie à la liste
-        setCategories(prev => [...prev, category]);
+        toast.success('Catégorie créée avec succès');
         
         // Réinitialiser le formulaire
         setNewCategory({ name: '', slug: '', description: '', menu: '', order: 0 });
         setIsCreating(false);
         
-        toast.success('Catégorie créée avec succès');
+        // Recharger les données comme dans ProductsManager
+        await fetchData();
+        
+        // Émettre l'événement pour synchroniser avec les autres composants
+        appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -163,13 +167,14 @@ export default function CategoriesManager() {
         const updatedCategory = await response.json();
         console.log('✅ Catégorie mise à jour:', updatedCategory);
         
-        // Mettre à jour directement dans la liste
-        setCategories(prev => 
-          prev.map(cat => cat._id === updatedCategory._id ? updatedCategory : cat)
-        );
-        
-        setEditingCategory(null);
         toast.success('Catégorie mise à jour avec succès');
+        setEditingCategory(null);
+        
+        // Recharger les données comme dans ProductsManager
+        await fetchData();
+        
+        // Émettre l'événement pour synchroniser avec les autres composants
+        appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         toast.error('Erreur lors de la mise à jour');
       }
@@ -194,14 +199,20 @@ export default function CategoriesManager() {
       if (response.ok) {
         console.log('✅ Catégorie supprimée');
         
-        // Supprimer directement de la liste
+        // Supprimer directement de la liste comme dans ProductsManager
         setCategories(prev => prev.filter(cat => cat._id !== id));
         
         toast.success('Catégorie supprimée avec succès');
+        
+        // Émettre l'événement pour synchroniser avec les autres composants
+        appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);
         toast.error('Erreur lors de la suppression');
+        
+        // Recharger les données en cas d'erreur
+        await fetchData();
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
