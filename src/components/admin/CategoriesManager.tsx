@@ -209,56 +209,30 @@ export default function CategoriesManager() {
       return;
     }
 
-    console.log('🗑️ Tentative de suppression de la catégorie:', id);
-
     try {
-      // Afficher un loader
-      const loadingMsg = document.createElement('div');
-      loadingMsg.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-      loadingMsg.textContent = '⏳ Suppression en cours...';
-      document.body.appendChild(loadingMsg);
-
       const response = await fetch(`/api/categories/${id}`, {
         method: 'DELETE'
       });
 
-      loadingMsg.remove();
-
       if (response.ok) {
-        console.log('✅ Catégorie supprimée avec succès');
-        
-        // Mettre à jour l'état local IMMÉDIATEMENT
-        setCategories(prev => {
-          const filtered = prev.filter(cat => cat._id !== id);
-          console.log(`📊 Mise à jour locale: ${prev.length} -> ${filtered.length} catégories`);
-          return filtered;
-        });
-        
-        // Afficher le message de succès
+        // Message de succès
         const successMsg = document.createElement('div');
         successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
         successMsg.textContent = '✅ Catégorie supprimée avec succès!';
         document.body.appendChild(successMsg);
+        setTimeout(() => successMsg.remove(), 3000);
         
-        setTimeout(() => {
-          successMsg.remove();
-        }, 3000);
+        // IMPORTANT: Simplement recharger toutes les données
+        await loadData();
         
         // Émettre l'événement
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
-        
-        // NE PAS recharger les données après suppression car on a déjà mis à jour localement
       } else {
-        const result = await response.json();
-        console.error('❌ Erreur suppression:', result);
-        toast.error(result.error || 'Erreur lors de la suppression');
-        
-        // En cas d'erreur, recharger pour synchroniser
-        await loadData();
+        alert('Erreur lors de la suppression');
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      toast.error('Erreur de connexion');
+      alert('Erreur lors de la suppression');
     }
   };
 

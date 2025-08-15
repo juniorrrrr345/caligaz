@@ -35,59 +35,41 @@ export default function FarmsManager() {
     isActive: true
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  // Fonction de chargement simple et efficace
+  const loadData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Début du chargement des données...');
-      
-      // IMPORTANT: Vider complètement les farms AVANT de recharger
-      setFarms([]);
+      console.log('🔄 FarmsManager - Chargement des données...');
       
       // Charger les menus
-      console.log('📋 Chargement des menus...');
       const menusRes = await fetch('/api/menus');
-      console.log('📋 Réponse menus:', menusRes.status);
       if (menusRes.ok) {
         const menusData = await menusRes.json();
-        console.log('📋 Menus chargés:', menusData.length, menusData);
         setMenus(menusData);
-      } else {
-        console.error('❌ Erreur menus:', menusRes.status);
-        setMenus([]);
       }
 
-      // Charger TOUTES les farms (sans filtre par menu)
-      console.log('🏭 Chargement de toutes les farms...');
-      const farmsRes = await fetch('/api/farms/all');
-      console.log('🏭 Réponse farms:', farmsRes.status);
+      // Charger TOUTES les farms
+      const timestamp = Date.now();
+      const farmsRes = await fetch(`/api/farms/all?t=${timestamp}`);
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
         console.log('🏭 Farms chargées:', farmsData.length);
-        farmsData.forEach((farm: any) => {
-          console.log(`  - ${farm.name} (Menu: ${farm.menu}, ID: ${farm._id})`);
-        });
-        // S'assurer de créer un nouveau tableau
-        setFarms([...farmsData]);
+        setFarms(farmsData);
       } else {
-        console.error('❌ Erreur farms:', farmsRes.status);
         setFarms([]);
       }
-      
-      console.log('✅ Chargement terminé avec succès');
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
-      // En cas d'erreur, on s'assure que loading devient false
       setFarms([]);
       setMenus([]);
     } finally {
       setLoading(false);
-      console.log('🏁 Loading mis à false');
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const generateSlug = (name: string) => {
     return name
@@ -111,8 +93,6 @@ export default function FarmsManager() {
         isActive: true
       };
 
-      console.log('📝 Création farm pour menu:', farmToSave.menu);
-
       const response = await fetch('/api/farms', {
         method: 'POST',
         headers: {
@@ -122,60 +102,29 @@ export default function FarmsManager() {
       });
 
       if (response.ok) {
-        const farm = await response.json();
-        console.log('✅ Farm créée:', farm);
-        
-        // Afficher un message de succès
+        // Message de succès
         const successMsg = document.createElement('div');
         successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
         successMsg.textContent = '✅ Farm ajoutée avec succès!';
         document.body.appendChild(successMsg);
-        
-        setTimeout(() => {
-          successMsg.remove();
-        }, 3000);
+        setTimeout(() => successMsg.remove(), 3000);
         
         // Réinitialiser le formulaire
         setNewFarm({ name: '', slug: '', menu: 'caligaz', order: 0, isActive: true });
         setIsCreating(false);
         
-        // Forcer la synchronisation immédiate (comme dans ProductsManager)
-        try {
-          const cacheResponse = await fetch('/api/cache/invalidate', { method: 'POST' });
-          console.log('🔄 Cache invalidé:', cacheResponse.ok);
-        } catch (error) {
-          console.error('Erreur invalidation cache:', error);
-        }
+        // Recharger les données
+        await loadData();
         
-        // Recharger les données comme dans ProductsManager
-        await fetchData();
-        
-        // Émettre l'événement pour synchroniser avec les autres composants
+        // Émettre l'événement
         appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const error = await response.json();
-        console.error('❌ Erreur de création:', error);
-        
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-        errorMsg.textContent = `❌ Erreur: ${error.error || 'Impossible de créer la farm'}`;
-        document.body.appendChild(errorMsg);
-        
-        setTimeout(() => {
-          errorMsg.remove();
-        }, 3000);
+        toast.error(error.error || 'Erreur lors de la création');
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      
-      const errorMsg = document.createElement('div');
-      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-      errorMsg.textContent = '❌ Erreur lors de la création de la farm';
-      document.body.appendChild(errorMsg);
-      
-      setTimeout(() => {
-        errorMsg.remove();
-      }, 3000);
+      toast.error('Erreur lors de la création de la farm');
     }
   };
 
@@ -192,47 +141,26 @@ export default function FarmsManager() {
       });
 
       if (response.ok) {
-        const updatedFarm = await response.json();
-        console.log('✅ Farm mise à jour:', updatedFarm);
-        
-        // Afficher un message de succès
+        // Message de succès
         const successMsg = document.createElement('div');
         successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
         successMsg.textContent = '✅ Farm modifiée avec succès!';
         document.body.appendChild(successMsg);
-        
-        setTimeout(() => {
-          successMsg.remove();
-        }, 3000);
+        setTimeout(() => successMsg.remove(), 3000);
         
         setEditingFarm(null);
         
-        // Recharger les données comme dans ProductsManager
-        await fetchData();
+        // Recharger les données
+        await loadData();
         
-        // Émettre l'événement pour synchroniser avec les autres composants
+        // Émettre l'événement
         appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-        errorMsg.textContent = '❌ Erreur lors de la mise à jour';
-        document.body.appendChild(errorMsg);
-        
-        setTimeout(() => {
-          errorMsg.remove();
-        }, 3000);
+        toast.error('Erreur lors de la mise à jour');
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      
-      const errorMsg = document.createElement('div');
-      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-      errorMsg.textContent = '❌ Erreur lors de la mise à jour de la farm';
-      document.body.appendChild(errorMsg);
-      
-      setTimeout(() => {
-        errorMsg.remove();
-      }, 3000);
+      toast.error('Erreur lors de la mise à jour de la farm');
     }
   };
 
@@ -241,65 +169,30 @@ export default function FarmsManager() {
       return;
     }
 
-    console.log('🗑️ Suppression de la farm:', id);
-
     try {
-      // Afficher un loader pendant la suppression
-      const loadingMsg = document.createElement('div');
-      loadingMsg.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-      loadingMsg.textContent = '⏳ Suppression en cours...';
-      document.body.appendChild(loadingMsg);
-
-      // Envoyer la requête de suppression AVANT de mettre à jour l'interface
       const response = await fetch(`/api/farms/${id}`, {
         method: 'DELETE'
       });
 
-      // Supprimer le message de chargement
-      loadingMsg.remove();
-
       if (response.ok) {
-        // Suppression réussie - mettre à jour l'interface IMMÉDIATEMENT
-        setFarms(prev => prev.filter(farm => farm._id !== id));
-        
+        // Message de succès
         const successMsg = document.createElement('div');
         successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
         successMsg.textContent = '✅ Farm supprimée avec succès!';
         document.body.appendChild(successMsg);
+        setTimeout(() => successMsg.remove(), 3000);
         
-        setTimeout(() => {
-          successMsg.remove();
-        }, 3000);
+        // Simplement recharger toutes les données
+        await loadData();
         
-        // Émettre l'événement pour synchroniser avec les autres composants
+        // Émettre l'événement
         appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
-        const result = await response.json();
-        console.error('❌ Erreur:', result);
-        
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-        errorMsg.textContent = `❌ Erreur: ${result.error || 'Impossible de supprimer'}`;
-        document.body.appendChild(errorMsg);
-        
-        setTimeout(() => {
-          errorMsg.remove();
-        }, 3000);
-        
-        // Recharger les données en cas d'erreur
-        await fetchData();
+        alert('Erreur lors de la suppression');
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      
-      const errorMsg = document.createElement('div');
-      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-      errorMsg.textContent = '❌ Erreur de connexion';
-      document.body.appendChild(errorMsg);
-      
-      setTimeout(() => {
-        errorMsg.remove();
-      }, 3000);
+      alert('Erreur lors de la suppression');
     }
   };
 
