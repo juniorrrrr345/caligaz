@@ -18,8 +18,11 @@ export default function AdminPage() {
     // Charger depuis le cache instantané
     const loadData = async () => {
       try {
-              await contentCache.initialize();
-      const settings = contentCache.getSettings();
+        // Initialiser le cache si nécessaire
+        if (contentCache.preloadData) {
+          await contentCache.preloadData();
+        }
+        const settings = contentCache.getSettings();
         
         setBackgroundSettings({
           backgroundImage: settings?.backgroundImage || '',

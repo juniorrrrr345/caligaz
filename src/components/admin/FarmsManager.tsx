@@ -125,6 +125,7 @@ export default function FarmsManager() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
         },
         body: JSON.stringify(farmToSave)
       });
@@ -141,8 +142,10 @@ export default function FarmsManager() {
         setNewFarm({ name: '', slug: '', menu: 'caligaz', order: 0, isActive: true });
         setIsCreating(false);
         
-        // Recharger les données
-        await reloadData();
+        // Attendre un peu pour que la DB se mette à jour, puis recharger
+        setTimeout(async () => {
+          await reloadData();
+        }, 500);
         
         // Émettre l'événement
         appEvents.emit(EVENTS.FARMS_UPDATED);

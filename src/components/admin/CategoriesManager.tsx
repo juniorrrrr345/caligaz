@@ -129,31 +129,28 @@ export default function CategoriesManager() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
         },
         body: JSON.stringify(categoryToSave)
       });
 
       if (response.ok) {
-        const category = await response.json();
-        console.log('✅ Catégorie créée avec succès:', category);
-        
-        // Afficher un message de succès
+        // Message de succès
         const successMsg = document.createElement('div');
         successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
         successMsg.textContent = '✅ Catégorie ajoutée avec succès!';
         document.body.appendChild(successMsg);
-        
-        setTimeout(() => {
-          successMsg.remove();
-        }, 3000);
+        setTimeout(() => successMsg.remove(), 3000);
         
         // Réinitialiser le formulaire
-        setNewCategory({ name: '', slug: '', description: '', menu: 'caligaz', order: 0, isActive: true });
+        setNewCategory({ name: '', slug: '', menu: 'caligaz', order: 0, isActive: true });
         setIsCreating(false);
         
-        // IMPORTANT: Recharger TOUTES les données comme ProductsManager
+        // IMPORTANT: Attendre un peu puis recharger TOUTES les données comme ProductsManager
         console.log('🔄 Rechargement après création...');
-        await reloadData();
+        setTimeout(async () => {
+          await reloadData();
+        }, 500);
         
         // Émettre l'événement
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
