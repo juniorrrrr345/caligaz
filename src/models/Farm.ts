@@ -7,6 +7,11 @@ const FarmSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  slug: {
+    type: String,
+    required: false,
+    trim: true
+  },
   description: {
     type: String,
     default: ''
