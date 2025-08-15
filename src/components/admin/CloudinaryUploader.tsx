@@ -38,8 +38,11 @@ export default function CloudinaryUploader({
       
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('upload_preset', 'caligaz'); // Votre preset unsigned
+      formData.append('folder', file.type.startsWith('video/') || file.type === 'image/gif' ? 'boutique_videos' : 'boutique_images');
 
-      const response = await fetch('/api/upload-cloudinary', {
+      // BYPASS VERCEL : Upload DIRECT vers Cloudinary
+      const response = await fetch('https://api.cloudinary.com/v1_1/dwobmx6zy/auto/upload', {
         method: 'POST',
         body: formData,
       });
@@ -64,12 +67,14 @@ export default function CloudinaryUploader({
       }
 
       const result = await response.json();
-      console.log('✅ Upload Cloudinary réussi:', result);
+      console.log('✅ Upload DIRECT Cloudinary réussi:', result);
       
       setProgress('Upload terminé !');
       setTimeout(() => setProgress(''), 2000);
       
-      onMediaSelected(result.url, result.type);
+      // Adapter la réponse Cloudinary direct
+      const isVideo = file.type.startsWith('video/') || file.type === 'image/gif';
+      onMediaSelected(result.secure_url, isVideo ? 'video' : 'image');
       
       // Reset l'input
       event.target.value = '';
@@ -114,8 +119,8 @@ export default function CloudinaryUploader({
             )}
           </label>
           
-          <span className="text-sm text-gray-400">
-            AUCUNE LIMITE - Images, Vidéos, GIFs - Hébergement cloud
+          <span className="text-sm text-green-400">
+            ⚡ DIRECT CLOUDINARY - Bypass Vercel - Vidéos jusqu'à 100MB
           </span>
         </div>
 
