@@ -14,12 +14,22 @@ const nextConfig = {
   serverRuntimeConfig: {
     maxDuration: 300
   },
-  // Limite de payload pour gros fichiers (4.5MB par défaut -> 100MB)
+  // AUCUNE LIMITE de payload 
   api: {
     bodyParser: {
-      sizeLimit: '100mb'
+      sizeLimit: '1gb'
     },
     responseLimit: false
+  },
+  // Images et uploads sans limite
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com'
+      }
+    ]
   }
 }
 

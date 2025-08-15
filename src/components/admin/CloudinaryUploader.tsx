@@ -121,7 +121,7 @@ export default function CloudinaryUploader({
           </label>
           
           <span className="text-sm text-gray-400">
-            Images (10MB) & Vidéos/GIFs (sans limite) - Hébergement cloud
+            Images (10MB) & Vidéos/GIFs (AUCUNE LIMITE) - Hébergement cloud
           </span>
         </div>
 

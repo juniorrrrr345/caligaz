@@ -125,9 +125,9 @@ export async function POST(request: NextRequest) {
           reject(new Error('Impossible de lire le fichier'));
         }
       }),
-    // Timeout de 4 minutes (moins que maxDuration)
+    // Timeout de 4.5 minutes (moins que maxDuration)
     new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Upload timeout - 4 minutes dépassées')), 240000)
+      setTimeout(() => reject(new Error('Upload timeout - 4.5 minutes dépassées')), 270000)
     )
   ]);
 
