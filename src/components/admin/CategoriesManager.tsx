@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { appEvents, EVENTS } from '@/lib/events';
@@ -27,6 +27,7 @@ export default function CategoriesManager() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0); // Clé pour forcer le re-render
 
   const [newCategory, setNewCategory] = useState<Category>({
     name: '',
@@ -36,70 +37,56 @@ export default function CategoriesManager() {
     isActive: true
   });
 
-  // Fonction de chargement des données EXACTEMENT comme loadData dans ProductsManager
-  const loadData = async () => {
+  // Fonction de chargement des données avec force update
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔄 CategoriesManager - Début du chargement complet...');
-      console.log('  - État actuel des catégories AVANT:', categories.length);
+      
+      // IMPORTANT: Vider les catégories d'abord
+      setCategories([]);
       
       // 1. Charger les menus
-      console.log('📋 Chargement des menus...');
       const menusRes = await fetch('/api/menus');
-      console.log('📋 Réponse menus:', menusRes.status);
       if (menusRes.ok) {
         const menusData = await menusRes.json();
-        console.log('📋 Menus chargés:', menusData.length, menusData);
         setMenus(menusData);
-      } else {
-        console.error('❌ Erreur menus:', menusRes.status);
-        setMenus([]);
       }
 
-      // 2. Charger TOUTES les catégories avec timestamp pour éviter le cache
-      console.log('🏷️ Chargement de toutes les catégories...');
+      // 2. Charger TOUTES les catégories
       const timestamp = Date.now();
-      const url = `/api/categories/all?t=${timestamp}`;
-      console.log('  - URL appelée:', url);
-      const categoriesRes = await fetch(url);
-      console.log('🏷️ Réponse catégories:', categoriesRes.status);
+      const categoriesRes = await fetch(`/api/categories/all?t=${timestamp}&nocache=${Math.random()}`);
       
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
-        console.log('🏷️ Catégories reçues de l\'API:', categoriesData.length);
-        console.log('  - Données brutes:', JSON.stringify(categoriesData));
-        categoriesData.forEach((cat: any) => {
-          console.log(`  - ${cat.name} (Menu: ${cat.menu}, ID: ${cat._id})`);
-        });
+        console.log('🏷️ Catégories reçues:', categoriesData.length);
         
-        // IMPORTANT: Créer un nouveau tableau pour forcer React à re-render
+        // Forcer un nouveau tableau et une nouvelle clé
         setCategories([...categoriesData]);
-        console.log('✅ État categories mis à jour avec', categoriesData.length, 'éléments');
-        console.log('  - Vérification après setCategories:', categories.length);
+        setRefreshKey(prev => prev + 1); // Forcer le re-render
+        
+        console.log('✅ État mis à jour avec', categoriesData.length, 'catégories');
       } else {
-        console.error('❌ Erreur catégories:', categoriesRes.status);
-        const errorText = await categoriesRes.text();
-        console.error('  - Erreur détaillée:', errorText);
+        console.error('❌ Erreur chargement catégories');
         setCategories([]);
       }
-      
-      console.log('✅ Chargement terminé avec succès');
     } catch (error) {
-      console.error('❌ Erreur lors du chargement:', error);
+      console.error('❌ Erreur:', error);
       setCategories([]);
-      setMenus([]);
     } finally {
       setLoading(false);
-      console.log('🏁 Loading mis à false');
-      console.log('  - État final des catégories:', categories.length);
     }
-  };
-
-  // Charger les données au montage du composant
-  useEffect(() => {
-    console.log('🚀 CategoriesManager monté, chargement initial...');
-    loadData();
   }, []);
+
+  // Charger les données au montage
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Écouter les changements de catégories
+  useEffect(() => {
+    console.log('📊 Catégories dans l\'état:', categories.length);
+  }, [categories]);
 
   const generateSlug = (name: string) => {
     return name
@@ -357,7 +344,7 @@ export default function CategoriesManager() {
       )}
 
       {/* Liste des catégories groupées par menu */}
-      <div className="space-y-6">
+      <div key={refreshKey} className="space-y-6">
         {Object.entries(categoriesByMenu).map(([menuSlug, menuCategories]) => {
           const menu = menus.find(m => m.slug === menuSlug);
           return (

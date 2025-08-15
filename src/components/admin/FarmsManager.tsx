@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Factory } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { appEvents, EVENTS } from '@/lib/events';
@@ -26,6 +26,7 @@ export default function FarmsManager() {
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0); // Clé pour forcer le re-render
 
   const [newFarm, setNewFarm] = useState<Farm>({
     name: '',
@@ -35,12 +36,14 @@ export default function FarmsManager() {
     isActive: true
   });
 
-  // Fonction de chargement simple et efficace
-  const loadData = async () => {
+  // Fonction de chargement avec force update
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔄 FarmsManager - Chargement des données...');
-      console.log('  - État actuel des farms AVANT:', farms.length);
+      
+      // Vider les farms d'abord
+      setFarms([]);
       
       // Charger les menus
       const menusRes = await fetch('/api/menus');
@@ -51,37 +54,38 @@ export default function FarmsManager() {
 
       // Charger TOUTES les farms
       const timestamp = Date.now();
-      const url = `/api/farms/all?t=${timestamp}`;
-      console.log('  - URL appelée:', url);
-      const farmsRes = await fetch(url);
-      console.log('🏭 Réponse farms:', farmsRes.status);
+      const farmsRes = await fetch(`/api/farms/all?t=${timestamp}&nocache=${Math.random()}`);
       
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
-        console.log('🏭 Farms reçues de l\'API:', farmsData.length);
-        console.log('  - Données brutes:', JSON.stringify(farmsData));
-        setFarms(farmsData);
-        console.log('✅ État farms mis à jour avec', farmsData.length, 'éléments');
+        console.log('🏭 Farms reçues:', farmsData.length);
+        
+        // Forcer un nouveau tableau et une nouvelle clé
+        setFarms([...farmsData]);
+        setRefreshKey(prev => prev + 1); // Forcer le re-render
+        
+        console.log('✅ État mis à jour avec', farmsData.length, 'farms');
       } else {
-        console.error('❌ Erreur farms:', farmsRes.status);
-        const errorText = await farmsRes.text();
-        console.error('  - Erreur détaillée:', errorText);
+        console.error('❌ Erreur chargement farms');
         setFarms([]);
       }
     } catch (error) {
-      console.error('❌ Erreur lors du chargement:', error);
+      console.error('❌ Erreur:', error);
       setFarms([]);
-      setMenus([]);
     } finally {
       setLoading(false);
-      console.log('🏁 Loading mis à false');
-      console.log('  - État final des farms:', farms.length);
     }
-  };
+  }, []);
 
+  // Charger les données au montage
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
+
+  // Écouter les changements de farms
+  useEffect(() => {
+    console.log('📊 Farms dans l\'état:', farms.length);
+  }, [farms]);
 
   const generateSlug = (name: string) => {
     return name
@@ -313,7 +317,7 @@ export default function FarmsManager() {
       )}
 
       {/* Liste des farms groupées par menu */}
-      <div className="space-y-6">
+      <div key={refreshKey} className="space-y-6">
         {Object.entries(farmsByMenu).map(([menuSlug, menuFarms]) => {
           const menu = menus.find(m => m.slug === menuSlug);
           return (
