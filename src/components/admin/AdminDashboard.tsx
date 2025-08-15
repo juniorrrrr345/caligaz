@@ -50,11 +50,11 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     <div className="min-h-screen bg-black text-white">
       {/* Desktop: Sidebar + Content */}
       <div className="hidden lg:flex">
-        {/* Sidebar Desktop avec style ÎLE DE FRANCE FULL OPTION */}
+        {/* Sidebar Desktop avec style CaliGaz */}
         <aside className="w-72 bg-black/90 backdrop-blur-sm border-r border-white/20 min-h-screen fixed left-0 top-0 z-50">
           <div className="p-6 border-b border-white/20">
-            <h1 className="text-2xl font-black text-white tracking-wider">FULL OPTION IDF</h1>
-            <p className="text-gray-400 text-xs mt-1 uppercase tracking-[0.2em] font-medium">Panel Admin - FULL OPTION IDF</p>
+            <h1 className="text-2xl font-black text-white tracking-wider">CaliGaz ⛽</h1>
+            <p className="text-gray-400 text-xs mt-1 uppercase tracking-[0.2em] font-medium">Panel Admin - CaliGaz</p>
           </div>
           <nav className="p-4">
             <div className="space-y-3">
@@ -178,8 +178,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         <div className="hidden sm:flex lg:hidden h-screen">
           <aside className="w-64 bg-black/90 backdrop-blur-sm border-r border-white/20 min-h-screen overflow-y-auto">
             <div className="p-4 border-b border-white/20">
-              <h1 className="text-lg font-black text-white tracking-wider">FULL OPTION IDF</h1>
-              <p className="text-gray-400 text-xs mt-1 uppercase tracking-[0.2em] font-medium">Panel Admin - FULL OPTION IDF</p>
+              <h1 className="text-lg font-black text-white tracking-wider">CaliGaz ⛽</h1>
+              <p className="text-gray-400 text-xs mt-1 uppercase tracking-[0.2em] font-medium">Panel Admin - CaliGaz</p>
             </div>
             <nav className="p-3">
               <div className="space-y-2">
