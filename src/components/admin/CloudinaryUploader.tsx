@@ -51,8 +51,22 @@ export default function CloudinaryUploader({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
+        let errorMessage = `Erreur HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // Si la réponse n'est pas JSON (timeout Vercel par exemple)
+          const errorText = await response.text();
+          if (errorText.includes('Function timeout')) {
+            errorMessage = 'Timeout - Vidéo trop longue à uploader';
+          } else if (errorText.includes('Request Entity Too Large')) {
+            errorMessage = 'Fichier trop volumineux pour Vercel';
+          } else {
+            errorMessage = `Erreur serveur: ${response.status}`;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
