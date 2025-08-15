@@ -199,7 +199,7 @@ export default function FarmsManager() {
     console.log('🗑️ Suppression de la farm:', id);
 
     try {
-      const response = await fetch(`/api/force-delete?type=farm&id=${id}`, {
+      const response = await fetch(`/api/farms/${id}`, {
         method: 'DELETE'
       });
 
@@ -216,7 +216,7 @@ export default function FarmsManager() {
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);
-        toast.error('Erreur lors de la suppression');
+        toast.error(result.error || 'Erreur lors de la suppression');
         
         // Recharger les données en cas d'erreur
         await fetchData();

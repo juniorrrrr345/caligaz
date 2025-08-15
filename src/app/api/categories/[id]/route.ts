@@ -1,55 +1,53 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb-fixed';
+import connectDB from '@/lib/mongodb-fixed';
+import { Category } from '@/lib/models/Category';
+
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  try {
+    await connectDB();
+    
+    const category = await Category.findById(params.id);
+    
+    if (!category) {
+      return NextResponse.json({ error: 'Catégorie non trouvée' }, { status: 404 });
+    }
+    
+    return NextResponse.json(category);
+  } catch (error) {
+    console.error('Error fetching category:', error);
+    return NextResponse.json({ error: 'Failed to fetch category' }, { status: 500 });
+  }
+}
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     console.log('🔍 PUT Catégorie - ID reçu:', params.id);
     
-    const { db } = await connectToDatabase();
-    const categoriesCollection = db.collection('categories');
+    await connectDB();
     
     const data = await request.json();
     console.log('📝 Données reçues:', data);
     
-    const { ObjectId } = require('mongodb');
-    
-    // Vérifier si l'ID est valide
-    if (!ObjectId.isValid(params.id)) {
-      console.log('❌ ID invalide:', params.id);
-      return NextResponse.json({ error: 'ID catégorie invalide' }, { status: 400 });
-    }
-    
     // Nettoyer les données
     const { _id, ...updateData } = data;
-    updateData.updatedAt = new Date();
     
     console.log('🔄 Tentative de mise à jour avec:', updateData);
     
-    // Utiliser updateOne pour éviter les problèmes de compatibilité
-    const updateResult = await categoriesCollection.updateOne(
-      { _id: new ObjectId(params.id) },
-      { $set: updateData }
+    const updatedCategory = await Category.findByIdAndUpdate(
+      params.id,
+      updateData,
+      { new: true, runValidators: true }
     );
 
-    console.log('📊 Résultat updateOne:', updateResult);
-
-    if (updateResult.matchedCount === 0) {
+    if (!updatedCategory) {
       console.log('❌ Catégorie non trouvée');
       return NextResponse.json({ error: 'Catégorie non trouvée' }, { status: 404 });
     }
 
-    if (updateResult.modifiedCount === 0) {
-      console.log('⚠️ Aucune modification effectuée (données identiques)');
-    }
-
-    // Récupérer la catégorie mise à jour
-    const updatedCategory = await categoriesCollection.findOne({ _id: new ObjectId(params.id) });
-    
     console.log('✅ Catégorie mise à jour avec succès');
     return NextResponse.json(updatedCategory);
   } catch (error) {
     console.error('❌ Erreur lors de la modification:', error);
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'Pas de stack trace');
     return NextResponse.json({ 
       error: 'Erreur lors de la modification',
       details: error instanceof Error ? error.message : 'Erreur inconnue'
@@ -61,32 +59,19 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   try {
     console.log('🔍 DELETE Catégorie - ID reçu:', params.id);
     
-    const { db } = await connectToDatabase();
-    const categoriesCollection = db.collection('categories');
+    await connectDB();
     
-    const { ObjectId } = require('mongodb');
-    
-    // Vérifier si l'ID est valide
-    if (!ObjectId.isValid(params.id)) {
-      console.log('❌ ID invalide:', params.id);
-      return NextResponse.json({ error: 'ID catégorie invalide' }, { status: 400 });
-    }
-    
-    // Utiliser deleteOne pour plus de compatibilité
-    const result = await categoriesCollection.deleteOne({ _id: new ObjectId(params.id) });
+    const deletedCategory = await Category.findByIdAndDelete(params.id);
 
-    console.log('📊 Résultat deleteOne:', result);
-
-    if (result.deletedCount === 0) {
+    if (!deletedCategory) {
       console.log('⚠️ Catégorie non trouvée ou déjà supprimée');
       return NextResponse.json({ message: 'Catégorie non trouvée' }, { status: 404 });
     }
 
     console.log('✅ Catégorie supprimée avec succès');
-    return NextResponse.json({ message: 'Catégorie supprimée avec succès' });
+    return NextResponse.json({ message: 'Catégorie supprimée avec succès', deleted: deletedCategory });
   } catch (error) {
     console.error('❌ Erreur lors de la suppression:', error);
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'Pas de stack trace');
     return NextResponse.json({ 
       error: 'Erreur lors de la suppression',
       details: error instanceof Error ? error.message : 'Erreur inconnue'

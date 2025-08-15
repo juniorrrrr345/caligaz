@@ -192,7 +192,7 @@ export default function CategoriesManager() {
     console.log('🗑️ Suppression de la catégorie:', id);
 
     try {
-      const response = await fetch(`/api/force-delete?type=category&id=${id}`, {
+      const response = await fetch(`/api/categories/${id}`, {
         method: 'DELETE'
       });
 
@@ -209,7 +209,7 @@ export default function CategoriesManager() {
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);
-        toast.error('Erreur lors de la suppression');
+        toast.error(result.error || 'Erreur lors de la suppression');
         
         // Recharger les données en cas d'erreur
         await fetchData();
