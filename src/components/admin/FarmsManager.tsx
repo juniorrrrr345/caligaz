@@ -176,94 +176,44 @@ export default function FarmsManager() {
         </button>
       </div>
 
-      {/* Affichage par menu */}
-      {selectedMenuFilter === 'all' ? (
-        // Vue groupée par menu
-        <div className="space-y-8">
-          {Object.entries(farmsByMenu).map(([menuType, menuFarms]) => (
-            <div key={menuType}>
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                {menuType === 'principal' ? '⛽' : '🇪🇸'} {getMenuDisplayName(menuType as MenuType)}
-                <span className="text-sm text-gray-400">({menuFarms.length} farms)</span>
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                {menuFarms.map((farm) => (
-                  <div key={farm._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="font-bold text-white text-xl">{farm.name}</h3>
-                      <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                        {farm.isActive ? 'Actif' : 'Inactif'}
-                      </span>
-                    </div>
-                  
-                    {farm.country && (
-                      <p className="text-gray-400 text-sm mb-2">📍 {farm.country}</p>
-                    )}
-                    
-                    {farm.description && (
-                      <p className="text-gray-400 text-sm mb-4">{farm.description}</p>
-                    )}
-                  
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEdit(farm)}
-                        className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
-                      >
-                        ✏️ Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDelete(farm._id!)}
-                        className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+      {/* Affichage groupé par menu */}
+      <div className="space-y-8">
+        {Object.entries(farmsByMenu).map(([menuType, menuFarms]) => (
+          <div key={menuType}>
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              {menuType === 'principal' ? '⛽' : '🇪🇸'} {getMenuDisplayName(menuType as MenuType)}
+              <span className="text-sm text-gray-400">({menuFarms.length} farms)</span>
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              {menuFarms.map((farm) => (
+                <div key={farm._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <h3 className="font-bold text-white text-xl">{farm.name}</h3>
+                    <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                      {farm.isActive ? 'Actif' : 'Inactif'}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        // Vue filtrée
-        <div className="max-h-[70vh] overflow-y-auto pr-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {farms.map((farm) => (
-              <div key={farm._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="font-bold text-white text-xl">{farm.name}</h3>
-                  <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                    {farm.isActive ? 'Actif' : 'Inactif'}
-                  </span>
-                </div>
-              
-                {farm.country && (
-                  <p className="text-gray-400 text-sm mb-2">📍 {farm.country}</p>
-                )}
                 
-                {farm.description && (
-                  <p className="text-gray-400 text-sm mb-4">{farm.description}</p>
-                )}
-              
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleEdit(farm)}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
-                  >
-                    ✏️ Modifier
-                  </button>
-                  <button
-                    onClick={() => handleDelete(farm._id!)}
-                    className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
-                  >
-                    🗑️
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(farm)}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
+                    >
+                      ✏️ Modifier
+                    </button>
+                    <button
+                      onClick={() => handleDelete(farm._id!)}
+                      className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Modal d'édition */}
       {showModal && (
