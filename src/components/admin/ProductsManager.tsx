@@ -767,7 +767,6 @@ export default function ProductsManager() {
           >
             🧹 Nettoyer les prix
           </button>
-            </div>
           </div>
         </div>
       </div>
