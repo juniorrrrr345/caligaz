@@ -35,7 +35,12 @@ export default function CategoriesManager() {
       setLoading(true);
       
       // Charger les catégories
-      const categoriesRes = await fetch('/api/categories/all');
+      const categoriesRes = await fetch('/api/categories/all', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
         setCategories(categoriesData);
@@ -110,26 +115,23 @@ export default function CategoriesManager() {
   const handleDelete = async (categoryId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) return;
 
-    // Supprimer immédiatement de l'interface (optimistic update)
-    const previousCategories = categories;
-    setCategories(categories.filter(c => c._id !== categoryId));
-
     try {
       const response = await fetch(`/api/categories/${categoryId}`, {
         method: 'DELETE',
       });
 
-      // Peu importe la réponse, on garde la suppression visuelle
-      // Car même si l'API retourne 404, c'est que l'élément n'existe plus
-      if (!response.ok && response.status !== 404) {
-        console.error('Erreur serveur lors de la suppression');
-        // Restaurer seulement si c'est une vraie erreur (pas 404)
-        setCategories(previousCategories);
+      if (response.ok || response.status === 404) {
+        // Rechargement complet des données après suppression réussie
+        console.log('🔄 Rechargement des catégories après suppression...');
+        await loadData();
+        console.log('✅ Catégorie supprimée avec succès et données rechargées');
+      } else {
+        const error = await response.json();
+        console.error('Erreur serveur lors de la suppression:', error);
+        alert(error.details || 'Erreur lors de la suppression');
       }
     } catch (error) {
       console.error('Erreur réseau:', error);
-      // Restaurer en cas d'erreur réseau
-      setCategories(previousCategories);
       alert('Erreur de connexion. Veuillez réessayer.');
     }
   };

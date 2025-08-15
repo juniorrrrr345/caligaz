@@ -33,7 +33,12 @@ export default function FarmsManager() {
       setLoading(true);
       
       // Charger les farms
-      const farmsRes = await fetch('/api/farms/all');
+      const farmsRes = await fetch('/api/farms/all', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
         setFarms(farmsData);
@@ -107,26 +112,23 @@ export default function FarmsManager() {
   const handleDelete = async (farmId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette farm ?')) return;
 
-    // Supprimer immédiatement de l'interface (optimistic update)
-    const previousFarms = farms;
-    setFarms(farms.filter(f => f._id !== farmId));
-
     try {
       const response = await fetch(`/api/farms/${farmId}`, {
         method: 'DELETE',
       });
 
-      // Peu importe la réponse, on garde la suppression visuelle
-      // Car même si l'API retourne 404, c'est que l'élément n'existe plus
-      if (!response.ok && response.status !== 404) {
-        console.error('Erreur serveur lors de la suppression');
-        // Restaurer seulement si c'est une vraie erreur (pas 404)
-        setFarms(previousFarms);
+      if (response.ok || response.status === 404) {
+        // Rechargement complet des données après suppression réussie
+        console.log('🔄 Rechargement des farms après suppression...');
+        await loadData();
+        console.log('✅ Farm supprimée avec succès et données rechargées');
+      } else {
+        const error = await response.json();
+        console.error('Erreur serveur lors de la suppression:', error);
+        alert(error.details || 'Erreur lors de la suppression');
       }
     } catch (error) {
       console.error('Erreur réseau:', error);
-      // Restaurer en cas d'erreur réseau
-      setFarms(previousFarms);
       alert('Erreur de connexion. Veuillez réessayer.');
     }
   };
