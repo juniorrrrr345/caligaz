@@ -129,9 +129,17 @@ export default function CategoriesManager() {
         console.log('✅ Catégorie créée:', category);
         toast.success('Catégorie créée avec succès');
         
-        // Forcer un rechargement COMPLET avec nouveau timestamp
-        const newUrl = window.location.pathname + '?t=' + Date.now();
-        window.location.href = newUrl;
+        // Nettoyer tous les caches possibles
+        if (typeof window !== 'undefined') {
+          sessionStorage.clear();
+          localStorage.clear();
+        }
+        
+        // Attendre un peu pour que MongoDB se synchronise
+        setTimeout(() => {
+          // Forcer un rechargement COMPLET depuis le serveur
+          window.location.replace(window.location.pathname + '?refresh=' + Date.now());
+        }, 1000);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
@@ -194,9 +202,17 @@ export default function CategoriesManager() {
         console.log('✅ Catégorie supprimée');
         toast.success('Catégorie supprimée avec succès');
         
-        // Forcer un rechargement COMPLET avec nouveau timestamp
-        const newUrl = window.location.pathname + '?t=' + Date.now();
-        window.location.href = newUrl;
+        // Nettoyer tous les caches possibles
+        if (typeof window !== 'undefined') {
+          sessionStorage.clear();
+          localStorage.clear();
+        }
+        
+        // Attendre un peu pour que MongoDB se synchronise
+        setTimeout(() => {
+          // Forcer un rechargement COMPLET depuis le serveur
+          window.location.replace(window.location.pathname + '?refresh=' + Date.now());
+        }, 1000);
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);
