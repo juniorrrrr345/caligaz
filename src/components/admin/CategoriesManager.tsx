@@ -36,19 +36,13 @@ export default function CategoriesManager() {
     isActive: true
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  // Fonction de chargement des données EXACTEMENT comme loadData dans ProductsManager
+  const loadData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Début du chargement des données...');
+      console.log('🔄 CategoriesManager - Début du chargement complet...');
       
-      // IMPORTANT: Vider complètement les catégories AVANT de recharger
-      setCategories([]);
-      
-      // Charger les menus
+      // 1. Charger les menus
       console.log('📋 Chargement des menus...');
       const menusRes = await fetch('/api/menus');
       console.log('📋 Réponse menus:', menusRes.status);
@@ -61,18 +55,22 @@ export default function CategoriesManager() {
         setMenus([]);
       }
 
-      // Charger TOUTES les catégories (sans filtre par menu)
+      // 2. Charger TOUTES les catégories avec timestamp pour éviter le cache
       console.log('🏷️ Chargement de toutes les catégories...');
-      const categoriesRes = await fetch('/api/categories/all');
+      const timestamp = Date.now();
+      const categoriesRes = await fetch(`/api/categories/all?t=${timestamp}`);
       console.log('🏷️ Réponse catégories:', categoriesRes.status);
+      
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
-        console.log('🏷️ Catégories chargées:', categoriesData.length);
+        console.log('🏷️ Catégories reçues de l\'API:', categoriesData.length);
         categoriesData.forEach((cat: any) => {
           console.log(`  - ${cat.name} (Menu: ${cat.menu}, ID: ${cat._id})`);
         });
-        // S'assurer de créer un nouveau tableau
+        
+        // IMPORTANT: Créer un nouveau tableau pour forcer React à re-render
         setCategories([...categoriesData]);
+        console.log('✅ État categories mis à jour avec', categoriesData.length, 'éléments');
       } else {
         console.error('❌ Erreur catégories:', categoriesRes.status);
         setCategories([]);
@@ -81,7 +79,6 @@ export default function CategoriesManager() {
       console.log('✅ Chargement terminé avec succès');
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
-      // En cas d'erreur, on s'assure que loading devient false
       setCategories([]);
       setMenus([]);
     } finally {
@@ -89,6 +86,12 @@ export default function CategoriesManager() {
       console.log('🏁 Loading mis à false');
     }
   };
+
+  // Charger les données au montage du composant
+  useEffect(() => {
+    console.log('🚀 CategoriesManager monté, chargement initial...');
+    loadData();
+  }, []);
 
   const generateSlug = (name: string) => {
     return name
@@ -113,7 +116,7 @@ export default function CategoriesManager() {
         isActive: true
       };
 
-      console.log('📝 Création catégorie pour menu:', categoryToSave.menu);
+      console.log('📝 Création catégorie:', categoryToSave);
 
       const response = await fetch('/api/categories', {
         method: 'POST',
@@ -125,7 +128,7 @@ export default function CategoriesManager() {
 
       if (response.ok) {
         const category = await response.json();
-        console.log('✅ Catégorie créée:', category);
+        console.log('✅ Catégorie créée avec succès:', category);
         
         // Afficher un message de succès
         const successMsg = document.createElement('div');
@@ -141,43 +144,20 @@ export default function CategoriesManager() {
         setNewCategory({ name: '', slug: '', description: '', menu: 'caligaz', order: 0, isActive: true });
         setIsCreating(false);
         
-        // Forcer la synchronisation immédiate (comme dans ProductsManager)
-        try {
-          const cacheResponse = await fetch('/api/cache/invalidate', { method: 'POST' });
-          console.log('🔄 Cache invalidé:', cacheResponse.ok);
-        } catch (error) {
-          console.error('Erreur invalidation cache:', error);
-        }
+        // IMPORTANT: Recharger TOUTES les données comme ProductsManager
+        console.log('🔄 Rechargement après création...');
+        await loadData();
         
-        // Recharger les données comme dans ProductsManager
-        await fetchData();
-        
-        // Émettre l'événement pour synchroniser avec les autres composants
+        // Émettre l'événement
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
-        
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-        errorMsg.textContent = `❌ Erreur: ${error.error || 'Impossible de créer la catégorie'}`;
-        document.body.appendChild(errorMsg);
-        
-        setTimeout(() => {
-          errorMsg.remove();
-        }, 3000);
+        toast.error(error.error || 'Erreur lors de la création');
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      
-      const errorMsg = document.createElement('div');
-      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-      errorMsg.textContent = '❌ Erreur lors de la création de la catégorie';
-      document.body.appendChild(errorMsg);
-      
-      setTimeout(() => {
-        errorMsg.remove();
-      }, 3000);
+      toast.error('Erreur lors de la création de la catégorie');
     }
   };
 
@@ -209,32 +189,18 @@ export default function CategoriesManager() {
         
         setEditingCategory(null);
         
-        // Recharger les données comme dans ProductsManager
-        await fetchData();
+        // IMPORTANT: Recharger TOUTES les données
+        console.log('🔄 Rechargement après modification...');
+        await loadData();
         
-        // Émettre l'événement pour synchroniser avec les autres composants
+        // Émettre l'événement
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-        errorMsg.textContent = '❌ Erreur lors de la mise à jour';
-        document.body.appendChild(errorMsg);
-        
-        setTimeout(() => {
-          errorMsg.remove();
-        }, 3000);
+        toast.error('Erreur lors de la mise à jour');
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      
-      const errorMsg = document.createElement('div');
-      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-      errorMsg.textContent = '❌ Erreur lors de la mise à jour de la catégorie';
-      document.body.appendChild(errorMsg);
-      
-      setTimeout(() => {
-        errorMsg.remove();
-      }, 3000);
+      toast.error('Erreur lors de la mise à jour de la catégorie');
     }
   };
 
@@ -243,27 +209,32 @@ export default function CategoriesManager() {
       return;
     }
 
-    console.log('🗑️ Suppression de la catégorie:', id);
+    console.log('🗑️ Tentative de suppression de la catégorie:', id);
 
     try {
-      // Afficher un loader pendant la suppression
+      // Afficher un loader
       const loadingMsg = document.createElement('div');
       loadingMsg.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
       loadingMsg.textContent = '⏳ Suppression en cours...';
       document.body.appendChild(loadingMsg);
 
-      // Envoyer la requête de suppression AVANT de mettre à jour l'interface
       const response = await fetch(`/api/categories/${id}`, {
         method: 'DELETE'
       });
 
-      // Supprimer le message de chargement
       loadingMsg.remove();
 
       if (response.ok) {
-        // Suppression réussie - mettre à jour l'interface IMMÉDIATEMENT
-        setCategories(prev => prev.filter(cat => cat._id !== id));
+        console.log('✅ Catégorie supprimée avec succès');
         
+        // Mettre à jour l'état local IMMÉDIATEMENT
+        setCategories(prev => {
+          const filtered = prev.filter(cat => cat._id !== id);
+          console.log(`📊 Mise à jour locale: ${prev.length} -> ${filtered.length} catégories`);
+          return filtered;
+        });
+        
+        // Afficher le message de succès
         const successMsg = document.createElement('div');
         successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
         successMsg.textContent = '✅ Catégorie supprimée avec succès!';
@@ -273,35 +244,21 @@ export default function CategoriesManager() {
           successMsg.remove();
         }, 3000);
         
-        // Émettre l'événement pour synchroniser avec les autres composants
+        // Émettre l'événement
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
+        
+        // NE PAS recharger les données après suppression car on a déjà mis à jour localement
       } else {
         const result = await response.json();
-        console.error('❌ Erreur:', result);
+        console.error('❌ Erreur suppression:', result);
+        toast.error(result.error || 'Erreur lors de la suppression');
         
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-        errorMsg.textContent = `❌ Erreur: ${result.error || 'Impossible de supprimer'}`;
-        document.body.appendChild(errorMsg);
-        
-        setTimeout(() => {
-          errorMsg.remove();
-        }, 3000);
-        
-        // Recharger les données en cas d'erreur
-        await fetchData();
+        // En cas d'erreur, recharger pour synchroniser
+        await loadData();
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      
-      const errorMsg = document.createElement('div');
-      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
-      errorMsg.textContent = '❌ Erreur de connexion';
-      document.body.appendChild(errorMsg);
-      
-      setTimeout(() => {
-        errorMsg.remove();
-      }, 3000);
+      toast.error('Erreur de connexion');
     }
   };
 
