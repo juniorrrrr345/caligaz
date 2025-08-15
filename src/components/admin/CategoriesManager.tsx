@@ -111,18 +111,27 @@ export default function CategoriesManager() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) return;
 
     try {
+      // D'abord supprimer visuellement
+      setCategories(prev => prev.filter(c => c._id !== categoryId));
+      
+      // Ensuite supprimer dans la base de données
       const response = await fetch(`/api/categories/${categoryId}`, {
         method: 'DELETE',
       });
 
-      if (response.ok) {
-        // Mise à jour immédiate de l'interface
-        setCategories(prev => prev.filter(c => c._id !== categoryId));
-      } else {
+      if (!response.ok) {
+        // Si erreur, recharger pour restaurer l'état correct
+        console.error('Erreur lors de la suppression');
         await loadData();
+      } else {
+        // Si succès, recharger quand même après un délai pour synchroniser
+        setTimeout(() => {
+          loadData();
+        }, 500);
       }
     } catch (error) {
       console.error('Erreur:', error);
+      // En cas d'erreur, recharger
       await loadData();
     }
   };
