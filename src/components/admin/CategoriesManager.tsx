@@ -27,7 +27,6 @@ export default function CategoriesManager() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0); // Pour forcer le re-render
 
   const [newCategory, setNewCategory] = useState<Category>({
     name: '',
@@ -42,53 +41,48 @@ export default function CategoriesManager() {
   }, []);
 
   const fetchData = async () => {
-    setLoading(true); // Forcer le re-render
-    setCategories([]); // Vider les catégories pour forcer React à voir le changement
     try {
-      console.log('🔄 Chargement des données...');
+      setLoading(true);
+      console.log('🔄 Début du chargement des données...');
       
       // Charger les menus
-      const menusRes = await fetch('/api/menus', { 
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      console.log('📋 Chargement des menus...');
+      const menusRes = await fetch('/api/menus');
+      console.log('📋 Réponse menus:', menusRes.status);
       if (menusRes.ok) {
         const menusData = await menusRes.json();
+        console.log('📋 Menus chargés:', menusData.length, menusData);
         setMenus(menusData);
-        console.log('📋 Menus chargés:', menusData.length);
+      } else {
+        console.error('❌ Erreur menus:', menusRes.status);
+        setMenus([]);
       }
 
       // Charger TOUTES les catégories (sans filtre par menu)
-      // Ajouter un timestamp pour forcer le rechargement
-      const categoriesRes = await fetch(`/api/categories/all?t=${Date.now()}`, { 
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      console.log('🏷️ Chargement de toutes les catégories...');
+      const categoriesRes = await fetch('/api/categories/all');
+      console.log('🏷️ Réponse catégories:', categoriesRes.status);
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
         console.log('🏷️ Catégories chargées:', categoriesData.length);
         categoriesData.forEach((cat: any) => {
           console.log(`  - ${cat.name} (Menu: ${cat.menu}, ID: ${cat._id})`);
         });
-        // Forcer React à voir un nouvel array
-        setCategories([...categoriesData]);
-        setRefreshKey(Date.now()); // Utiliser timestamp comme clé unique
+        setCategories(categoriesData);
       } else {
-        console.error('❌ Erreur chargement catégories:', categoriesRes.status);
+        console.error('❌ Erreur catégories:', categoriesRes.status);
         setCategories([]);
-        setRefreshKey(Date.now());
       }
+      
+      console.log('✅ Chargement terminé avec succès');
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
-      toast.error('Erreur lors du chargement des données');
+      // En cas d'erreur, on s'assure que loading devient false
+      setCategories([]);
+      setMenus([]);
     } finally {
       setLoading(false);
+      console.log('🏁 Loading mis à false');
     }
   };
 
@@ -405,11 +399,11 @@ export default function CategoriesManager() {
       )}
 
       {/* Liste des catégories groupées par menu */}
-      <div className="space-y-6" key={refreshKey}>
+      <div className="space-y-6">
         {Object.entries(categoriesByMenu).map(([menuSlug, menuCategories]) => {
           const menu = menus.find(m => m.slug === menuSlug);
           return (
-            <div key={`${menuSlug}-${refreshKey}`} className="bg-gray-800/50 rounded-lg p-4 border border-white/10">
+            <div key={menuSlug} className="bg-gray-800/50 rounded-lg p-4 border border-white/10">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 {menu ? (
                   <>

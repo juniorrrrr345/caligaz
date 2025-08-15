@@ -26,7 +26,6 @@ export default function FarmsManager() {
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0); // Pour forcer le re-render
 
   const [newFarm, setNewFarm] = useState<Farm>({
     name: '',
@@ -41,62 +40,48 @@ export default function FarmsManager() {
   }, []);
 
   const fetchData = async () => {
-    setLoading(true);
-    setFarms([]); // Vider complètement
-    
     try {
-      console.log('🔄 Chargement FORCÉ des données...');
-      
-      // FORCER le rechargement en utilisant l'API directement
-      // sans passer par Mongoose
-      const timestamp = Date.now();
+      setLoading(true);
+      console.log('🔄 Début du chargement des données...');
       
       // Charger les menus
-      const menusRes = await fetch(`/api/menus?_t=${timestamp}&nocache=${Math.random()}`, { 
-        method: 'GET',
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
-      
+      console.log('📋 Chargement des menus...');
+      const menusRes = await fetch('/api/menus');
+      console.log('📋 Réponse menus:', menusRes.status);
       if (menusRes.ok) {
         const menusData = await menusRes.json();
-        console.log('📋 Menus chargés:', menusData);
-        setMenus([...menusData]); // Créer un nouveau tableau
+        console.log('📋 Menus chargés:', menusData.length, menusData);
+        setMenus(menusData);
+      } else {
+        console.error('❌ Erreur menus:', menusRes.status);
+        setMenus([]);
       }
 
-      // Utiliser directement l'API farms/all
-      const farmsRes = await fetch(`/api/farms/all?_t=${timestamp}&nocache=${Math.random()}`, { 
-        method: 'GET',
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
-      
+      // Charger TOUTES les farms (sans filtre par menu)
+      console.log('🏭 Chargement de toutes les farms...');
+      const farmsRes = await fetch('/api/farms/all');
+      console.log('🏭 Réponse farms:', farmsRes.status);
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
         console.log('🏭 Farms chargées:', farmsData.length);
         farmsData.forEach((farm: any) => {
           console.log(`  - ${farm.name} (Menu: ${farm.menu}, ID: ${farm._id})`);
         });
-        setFarms([...farmsData]);
-        setRefreshKey(Date.now());
+        setFarms(farmsData);
       } else {
-        console.error('❌ Erreur chargement farms:', farmsRes.status);
+        console.error('❌ Erreur farms:', farmsRes.status);
         setFarms([]);
-        setRefreshKey(Date.now());
       }
+      
+      console.log('✅ Chargement terminé avec succès');
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
-      toast.error('Erreur lors du chargement des données');
+      // En cas d'erreur, on s'assure que loading devient false
+      setFarms([]);
+      setMenus([]);
     } finally {
       setLoading(false);
+      console.log('🏁 Loading mis à false');
     }
   };
 
@@ -411,11 +396,11 @@ export default function FarmsManager() {
       )}
 
       {/* Liste des farms groupées par menu */}
-      <div className="space-y-6" key={refreshKey}>
+      <div className="space-y-6">
         {Object.entries(farmsByMenu).map(([menuSlug, menuFarms]) => {
           const menu = menus.find(m => m.slug === menuSlug);
           return (
-            <div key={`${menuSlug}-${refreshKey}`} className="bg-gray-800/50 rounded-lg p-4 border border-white/10">
+            <div key={menuSlug} className="bg-gray-800/50 rounded-lg p-4 border border-white/10">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 {menu ? (
                   <>
