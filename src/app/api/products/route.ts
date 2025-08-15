@@ -5,15 +5,27 @@ import { connectToDatabase } from '@/lib/mongodb-fixed';
 export const maxDuration = 30; // 30 secondes timeout
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     console.log('🔍 API Products - GET Request');
+    
+    const { searchParams } = new URL(request.url);
+    const menu = searchParams.get('menu');
     
     const { db } = await connectToDatabase();
     const productsCollection = db.collection('products');
     
-    const products = await productsCollection.find({ isActive: { $ne: false } }).sort({ createdAt: -1 }).toArray();
-    console.log(`📦 Produits trouvés: ${products.length}`);
+    // Construire le filtre
+    let filter: any = { isActive: { $ne: false } };
+    
+    // Filtrer par menu si spécifié
+    if (menu && ['principal', 'barcelone'].includes(menu)) {
+      filter.menu = menu;
+      console.log(`🎯 Filtrage par menu: ${menu}`);
+    }
+    
+    const products = await productsCollection.find(filter).sort({ createdAt: -1 }).toArray();
+    console.log(`📦 Produits trouvés: ${products.length} ${menu ? `(menu: ${menu})` : ''}`);
     
     // Ajouter des headers pour éviter le cache et assurer la synchronisation
     return NextResponse.json(products, {
@@ -58,6 +70,13 @@ export async function POST(request: Request) {
     const productsCollection = db.collection('products');
     
     const data = await request.json();
+    
+    // Valider et attribuer le menu
+    if (!data.menu || !['principal', 'barcelone'].includes(data.menu)) {
+      data.menu = 'principal'; // Valeur par défaut
+      console.log('⚠️ Menu invalide ou manquant, attribution par défaut: principal');
+    }
+    
     data.createdAt = new Date();
     data.updatedAt = new Date();
     data.isActive = data.isActive !== false; // Par défaut true
