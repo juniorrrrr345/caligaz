@@ -8,20 +8,17 @@ import { toast } from 'react-hot-toast';
 
 export default function Cart() {
   const { items, isOpen, setIsOpen, updateQuantity, removeItem, clearCart, getTotalPrice } = useCartStore();
-  const [whatsappNumber, setWhatsappNumber] = useState('33612345678'); // Numéro par défaut
+  const [telegramUsername, setTelegramUsername] = useState('@caligaz'); // Telegram par défaut
   
   useEffect(() => {
-    // Charger le numéro WhatsApp depuis les settings
+    // Charger l'username Telegram depuis les settings
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         if (data.whatsappNumber) {
-          // Nettoyer le numéro (enlever espaces, tirets, etc.)
-          const cleanNumber = data.whatsappNumber.replace(/[^0-9]/g, '');
-          setWhatsappNumber(cleanNumber);
-        } else if (data.telegramUsername) {
-          // Fallback sur un numéro WhatsApp par défaut si telegram existe
-          setWhatsappNumber('33612345678');
+          // Utiliser le champ whatsappNumber comme username Telegram
+          const username = data.whatsappNumber.startsWith('@') ? data.whatsappNumber : `@${data.whatsappNumber}`;
+          setTelegramUsername(username);
         }
       })
       .catch(() => {});
@@ -60,11 +57,11 @@ export default function Cart() {
     // Encoder le message pour l'URL
     const encodedMessage = encodeURIComponent(message);
     
-    // Créer l'URL WhatsApp
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+    // Créer l'URL Telegram
+    const telegramUrl = `https://t.me/${telegramUsername.replace('@', '')}?text=${encodedMessage}`;
     
     // Ouvrir dans une nouvelle fenêtre
-    window.open(whatsappUrl, '_blank');
+    window.open(telegramUrl, '_blank');
     
     // Afficher un message de succès
     toast.success('Redirection vers @Telegram...');
