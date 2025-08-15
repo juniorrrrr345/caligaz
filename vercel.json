@@ -11,8 +11,13 @@
     "src/app/api/upload/route.ts": {
       "maxDuration": 30,
       "memory": 1024
+    },
+    "src/app/api/upload-cloudinary/route.ts": {
+      "maxDuration": 300,
+      "memory": 3008
     }
   },
+  "maxDuration": 300,
   "regions": ["iad1"],
   "framework": "nextjs",
   "headers": [
