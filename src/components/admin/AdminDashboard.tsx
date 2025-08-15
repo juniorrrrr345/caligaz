@@ -7,8 +7,7 @@ import MenusManager from './MenusManager';
 import SocialLinksManager from './SocialLinksManager';
 import SettingsManager from './SettingsManager';
 import PagesManager from './PagesManager';
-import { appEvents } from '@/lib/appEvents';
-import { EVENTS } from '@/lib/events';
+import { appEvents, EVENTS } from '@/lib/events';
 
 
 interface AdminDashboardProps {
