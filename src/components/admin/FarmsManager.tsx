@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Factory } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { appEvents, EVENTS } from '@/lib/events';
@@ -26,7 +26,6 @@ export default function FarmsManager() {
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0); // Clé pour forcer le re-render
 
   const [newFarm, setNewFarm] = useState<Farm>({
     name: '',
@@ -36,51 +35,60 @@ export default function FarmsManager() {
     isActive: true
   });
 
-  // Fonction de chargement avec force update
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      console.log('🔄 FarmsManager - Chargement des données...');
-      
-      // Vider les farms d'abord
-      setFarms([]);
-      
-      // Charger les menus
-      const menusRes = await fetch('/api/menus');
-      if (menusRes.ok) {
-        const menusData = await menusRes.json();
-        setMenus(menusData);
-      }
+  // Charger les données au montage UNIQUEMENT
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        console.log('🔄 FarmsManager - Chargement initial...');
+        
+        // Charger les menus
+        const menusRes = await fetch('/api/menus');
+        if (menusRes.ok) {
+          const menusData = await menusRes.json();
+          setMenus(menusData);
+        }
 
-      // Charger TOUTES les farms
+        // Charger TOUTES les farms
+        const timestamp = Date.now();
+        const farmsRes = await fetch(`/api/farms/all?t=${timestamp}`);
+        
+        if (farmsRes.ok) {
+          const farmsData = await farmsRes.json();
+          console.log('🏭 Farms reçues:', farmsData.length);
+          setFarms(farmsData);
+        } else {
+          console.error('❌ Erreur chargement farms');
+          setFarms([]);
+        }
+      } catch (error) {
+        console.error('❌ Erreur:', error);
+        setFarms([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []); // Une seule fois au montage
+
+  // Fonction de rechargement manuel
+  const reloadData = async () => {
+    try {
+      console.log('🔄 Rechargement manuel des farms...');
+      
       const timestamp = Date.now();
-      const farmsRes = await fetch(`/api/farms/all?t=${timestamp}&nocache=${Math.random()}`);
+      const farmsRes = await fetch(`/api/farms/all?t=${timestamp}`);
       
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
-        console.log('🏭 Farms reçues:', farmsData.length);
-        
-        // Forcer un nouveau tableau et une nouvelle clé
-        setFarms([...farmsData]);
-        setRefreshKey(prev => prev + 1); // Forcer le re-render
-        
-        console.log('✅ État mis à jour avec', farmsData.length, 'farms');
-      } else {
-        console.error('❌ Erreur chargement farms');
-        setFarms([]);
+        console.log('🏭 Farms rechargées:', farmsData.length);
+        setFarms(farmsData);
       }
     } catch (error) {
-      console.error('❌ Erreur:', error);
-      setFarms([]);
-    } finally {
-      setLoading(false);
+      console.error('❌ Erreur rechargement:', error);
     }
-  }, []);
-
-  // Charger les données au montage
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  };
 
   // Écouter les changements de farms
   useEffect(() => {
@@ -130,7 +138,7 @@ export default function FarmsManager() {
         setIsCreating(false);
         
         // Recharger les données
-        await loadData();
+        await reloadData();
         
         // Émettre l'événement
         appEvents.emit(EVENTS.FARMS_UPDATED);
@@ -167,7 +175,7 @@ export default function FarmsManager() {
         setEditingFarm(null);
         
         // Recharger les données
-        await loadData();
+        await reloadData();
         
         // Émettre l'événement
         appEvents.emit(EVENTS.FARMS_UPDATED);
@@ -199,7 +207,7 @@ export default function FarmsManager() {
         setTimeout(() => successMsg.remove(), 3000);
         
         // Simplement recharger toutes les données
-        await loadData();
+        await reloadData();
         
         // Émettre l'événement
         appEvents.emit(EVENTS.FARMS_UPDATED);
@@ -317,7 +325,7 @@ export default function FarmsManager() {
       )}
 
       {/* Liste des farms groupées par menu */}
-      <div key={refreshKey} className="space-y-6">
+      <div key={farms.length} className="space-y-6">
         {Object.entries(farmsByMenu).map(([menuSlug, menuFarms]) => {
           const menu = menus.find(m => m.slug === menuSlug);
           return (

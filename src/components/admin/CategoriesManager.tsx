@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { appEvents, EVENTS } from '@/lib/events';
@@ -27,7 +27,6 @@ export default function CategoriesManager() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0); // Clé pour forcer le re-render
 
   const [newCategory, setNewCategory] = useState<Category>({
     name: '',
@@ -37,51 +36,60 @@ export default function CategoriesManager() {
     isActive: true
   });
 
-  // Fonction de chargement des données avec force update
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      console.log('🔄 CategoriesManager - Début du chargement complet...');
-      
-      // IMPORTANT: Vider les catégories d'abord
-      setCategories([]);
-      
-      // 1. Charger les menus
-      const menusRes = await fetch('/api/menus');
-      if (menusRes.ok) {
-        const menusData = await menusRes.json();
-        setMenus(menusData);
-      }
+  // Charger les données au montage UNIQUEMENT
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        console.log('🔄 CategoriesManager - Chargement initial...');
+        
+        // 1. Charger les menus
+        const menusRes = await fetch('/api/menus');
+        if (menusRes.ok) {
+          const menusData = await menusRes.json();
+          setMenus(menusData);
+        }
 
-      // 2. Charger TOUTES les catégories
+        // 2. Charger TOUTES les catégories
+        const timestamp = Date.now();
+        const categoriesRes = await fetch(`/api/categories/all?t=${timestamp}`);
+        
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json();
+          console.log('🏷️ Catégories reçues:', categoriesData.length);
+          setCategories(categoriesData);
+        } else {
+          console.error('❌ Erreur chargement catégories');
+          setCategories([]);
+        }
+      } catch (error) {
+        console.error('❌ Erreur:', error);
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []); // Dépendances vides = une seule fois au montage
+
+  // Fonction de rechargement manuel
+  const reloadData = async () => {
+    try {
+      console.log('🔄 Rechargement manuel des catégories...');
+      
       const timestamp = Date.now();
-      const categoriesRes = await fetch(`/api/categories/all?t=${timestamp}&nocache=${Math.random()}`);
+      const categoriesRes = await fetch(`/api/categories/all?t=${timestamp}`);
       
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
-        console.log('🏷️ Catégories reçues:', categoriesData.length);
-        
-        // Forcer un nouveau tableau et une nouvelle clé
-        setCategories([...categoriesData]);
-        setRefreshKey(prev => prev + 1); // Forcer le re-render
-        
-        console.log('✅ État mis à jour avec', categoriesData.length, 'catégories');
-      } else {
-        console.error('❌ Erreur chargement catégories');
-        setCategories([]);
+        console.log('🏷️ Catégories rechargées:', categoriesData.length);
+        setCategories(categoriesData);
       }
     } catch (error) {
-      console.error('❌ Erreur:', error);
-      setCategories([]);
-    } finally {
-      setLoading(false);
+      console.error('❌ Erreur rechargement:', error);
     }
-  }, []);
-
-  // Charger les données au montage
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  };
 
   // Écouter les changements de catégories
   useEffect(() => {
@@ -141,7 +149,7 @@ export default function CategoriesManager() {
         
         // IMPORTANT: Recharger TOUTES les données comme ProductsManager
         console.log('🔄 Rechargement après création...');
-        await loadData();
+        await reloadData();
         
         // Émettre l'événement
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
@@ -186,7 +194,7 @@ export default function CategoriesManager() {
         
         // IMPORTANT: Recharger TOUTES les données
         console.log('🔄 Rechargement après modification...');
-        await loadData();
+        await reloadData();
         
         // Émettre l'événement
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
@@ -218,7 +226,7 @@ export default function CategoriesManager() {
         setTimeout(() => successMsg.remove(), 3000);
         
         // IMPORTANT: Simplement recharger toutes les données
-        await loadData();
+        await reloadData();
         
         // Émettre l'événement
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
@@ -344,7 +352,7 @@ export default function CategoriesManager() {
       )}
 
       {/* Liste des catégories groupées par menu */}
-      <div key={refreshKey} className="space-y-6">
+      <div key={Date.now()} className="space-y-6">
         {Object.entries(categoriesByMenu).map(([menuSlug, menuCategories]) => {
           const menu = menus.find(m => m.slug === menuSlug);
           return (
