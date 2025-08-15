@@ -80,12 +80,12 @@ export default function MenuSelection({ onMenuSelect }: MenuSelectionProps) {
                       <h3 className="text-xl font-semibold text-white mb-2">
                         {menu.displayName}
                       </h3>
-                      <p className="text-gray-300 text-sm">
-                        {menu.type === 'principal' 
-                          ? 'Accédez au menu principal CaliGaz' 
-                          : 'Découvrez notre sélection Barcelone'
-                        }
-                      </p>
+                                             <p className="text-gray-300 text-sm">
+                         {menu.type === 'principal' 
+                           ? 'Accédez au menu principal CaliGaz' 
+                           : 'Découvrez notre sélection Barcelone - 100g minimum de commande'
+                         }
+                       </p>
                     </div>
                   </button>
                 ))}
