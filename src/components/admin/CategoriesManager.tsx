@@ -81,10 +81,7 @@ export default function CategoriesManager() {
     setEditingCategory(null);
     setFormData({
       name: '',
-      menu: 'principal',
-      emoji: '',
-      isActive: true,
-      order: 0
+      menu: 'principal'
     });
     setShowModal(true);
   };
