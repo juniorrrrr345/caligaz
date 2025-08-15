@@ -9,7 +9,7 @@ interface CloudinaryUploaderProps {
 
 export default function CloudinaryUploader({ 
   onMediaSelected, 
-  acceptedTypes = "image/*,video/*,.mov,.avi,.3gp",
+  acceptedTypes = "image/*,video/*,.mov,.avi,.3gp,.gif",
   className = ""
 }: CloudinaryUploaderProps) {
   const [uploading, setUploading] = useState(false);
@@ -20,10 +20,10 @@ export default function CloudinaryUploader({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const isVideo = file.type.startsWith('video/');
-    const maxSize = 10 * 1024 * 1024; // 10MB pour images seulement
+    const isVideo = file.type.startsWith('video/') || file.type === 'image/gif';
+    const maxSize = 10 * 1024 * 1024; // 10MB pour images statiques seulement
     
-    // Pas de limite pour les vidéos, limite seulement pour les images
+    // Pas de limite pour les vidéos ET GIFs, limite seulement pour les images statiques
     if (!isVideo && file.size > maxSize) {
       setError(`Image trop volumineuse: ${Math.round(file.size / 1024 / 1024)}MB. Maximum 10MB pour les images`);
       return;
@@ -121,7 +121,7 @@ export default function CloudinaryUploader({
           </label>
           
           <span className="text-sm text-gray-400">
-            Images (10MB) & Vidéos (sans limite) - Hébergement cloud
+            Images (10MB) & Vidéos/GIFs (sans limite) - Hébergement cloud
           </span>
         </div>
 

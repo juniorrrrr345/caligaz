@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
       'image/jpeg',
       'image/jpg', 
       'image/png', 
-      'image/webp'
+      'image/webp',
+      'image/gif'  // GIF ajouté
     ];
     
     if (!allowedTypes.includes(file.type)) {
@@ -50,10 +51,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const isVideo = file.type.startsWith('video/');
-    const maxSize = 10 * 1024 * 1024; // 10MB pour images seulement
+    const isVideo = file.type.startsWith('video/') || file.type === 'image/gif';
+    const maxSize = 10 * 1024 * 1024; // 10MB pour images statiques seulement
     
-    // Pas de limite pour les vidéos, limite seulement pour les images
+    // Pas de limite pour les vidéos ET GIFs, limite seulement pour les images statiques
     if (!isVideo && file.size > maxSize) {
       return NextResponse.json({ 
         error: `Image trop volumineuse: ${Math.round(file.size / 1024 / 1024)}MB. Maximum 10MB pour les images` 
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
 
           // Configuration simplifiée pour éviter les erreurs
           const uploadOptions: any = {
-            resource_type: isVideo ? 'video' : 'image',
+            resource_type: (file.type.startsWith('video/') || file.type === 'image/gif') ? 'auto' : 'image',
             folder: isVideo ? 'boutique_videos' : 'boutique_images',
             public_id: `upload_${Date.now()}`,
             overwrite: true
