@@ -16,9 +16,14 @@ export default function Cart() {
       .then(res => res.json())
       .then(data => {
         if (data.whatsappNumber) {
-          // Utiliser le champ whatsappNumber comme username Telegram
-          const username = data.whatsappNumber.startsWith('@') ? data.whatsappNumber : `@${data.whatsappNumber}`;
+          // Utiliser le champ whatsappNumber comme username Telegram depuis l'admin
+          let username = data.whatsappNumber.trim();
+          // S'assurer que ça commence par @
+          if (!username.startsWith('@')) {
+            username = `@${username}`;
+          }
           setTelegramUsername(username);
+          console.log('📱 Telegram username configuré:', username);
         }
       })
       .catch(() => {});

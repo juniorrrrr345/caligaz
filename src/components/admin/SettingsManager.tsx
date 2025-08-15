@@ -248,9 +248,9 @@ export default function SettingsManager() {
                 value={settings.whatsappNumber}
                 onChange={(e) => updateField('whatsappNumber', e.target.value)}
                 className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white"
-                placeholder="33612345678"
+                placeholder="@caligaz"
               />
-              <p className="text-xs text-gray-400 mt-1">Format: code pays + numéro (sans espaces ni tirets)</p>
+              <p className="text-xs text-gray-400 mt-1">Format: @username (ex: @caligaz)</p>
             </div>
           </div>
         </div>
