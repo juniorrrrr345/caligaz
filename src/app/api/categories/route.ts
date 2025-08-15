@@ -38,16 +38,28 @@ export async function POST(request: Request) {
     await connectDB();
     const data = await request.json();
     
+    console.log('📥 API: Données reçues:', data);
+    
     // Valider que le menu est correct
     if (!data.menu || !['principal', 'barcelone'].includes(data.menu)) {
+      console.log('⚠️ API: Menu invalide, correction:', data.menu, '→ principal');
       data.menu = 'principal'; // Valeur par défaut
     }
     
+    console.log('💾 API: Création catégorie avec:', data);
+    
     const category = new Category(data);
     await category.save();
+    
+    console.log('✅ API: Catégorie créée:', category._id);
     return NextResponse.json(category, { status: 201 });
   } catch (error) {
-    console.error('Error creating category:', error);
-    return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
+    console.error('❌ API: Erreur création catégorie:', error);
+    console.error('❌ API: Stack:', error.stack);
+    return NextResponse.json({ 
+      error: 'Failed to create category', 
+      details: error.message,
+      code: error.code 
+    }, { status: 500 });
   }
 }

@@ -96,8 +96,13 @@ export default function CategoriesManager() {
   const handleSave = async () => {
     try {
       console.log('💾 Admin: Sauvegarde catégorie...');
+      console.log('📋 FormData actuel:', formData);
+      console.log('📋 Menus disponibles:', availableMenus);
+      
       const method = editingCategory ? 'PUT' : 'POST';
       const url = editingCategory ? `/api/categories/${editingCategory._id}` : '/api/categories';
+      
+      console.log('🔄 Envoi vers:', url, 'méthode:', method);
       
       const response = await fetch(url, {
         method,
@@ -107,15 +112,20 @@ export default function CategoriesManager() {
         body: JSON.stringify(formData),
       });
 
+      console.log('📨 Réponse reçue:', response.status);
+
       if (response.ok) {
         console.log('✅ Admin: Catégorie sauvegardée');
         setShowModal(false);
         await loadCategories(); // Recharger les données
       } else {
-        console.error('❌ Admin: Erreur sauvegarde:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Admin: Erreur sauvegarde:', response.status, errorText);
+        alert(`Erreur: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('❌ Admin: Erreur lors de la sauvegarde:', error);
+      alert(`Erreur technique: ${error.message}`);
     }
   };
 
