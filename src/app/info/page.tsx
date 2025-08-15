@@ -17,11 +17,11 @@ async function getInfoContent() {
       await db.collection('pages').insertOne({
         slug: 'info',
         title: 'Informations',
-        content: 'Bienvenue sur la page d\'informations de FULL OPTION IDF.\n\nModifiez ce contenu depuis le panel d\'administration.',
+        content: 'Bienvenue sur la page d\'informations de CaliGaz.\n\nModifiez ce contenu depuis le panel d\'administration.',
         createdAt: new Date(),
         updatedAt: new Date()
       });
-      return 'Bienvenue sur la page d\'informations de FULL OPTION IDF.\n\nModifiez ce contenu depuis le panel d\'administration.';
+      return 'Bienvenue sur la page d\'informations de CaliGaz.\n\nModifiez ce contenu depuis le panel d\'administration.';
     }
     
     return page.content || '';

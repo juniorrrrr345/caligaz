@@ -24,14 +24,14 @@ async function getContactData() {
       await db.collection('pages').insertOne({
         slug: 'contact',
         title: 'Contact',
-        content: '# Contactez FULL OPTION IDF\n\nNous sommes à votre disposition pour répondre à toutes vos questions.\n\nModifiez ce contenu depuis le panel d\'administration.',
+        content: '# Contactez CaliGaz\n\nNous sommes à votre disposition pour répondre à toutes vos questions.\n\nModifiez ce contenu depuis le panel d\'administration.',
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
     
     return {
-      content: page?.content || '# Contactez FULL OPTION IDF\n\nNous sommes à votre disposition pour répondre à toutes vos questions.',
+      content: page?.content || '# Contactez CaliGaz\n\nNous sommes à votre disposition pour répondre à toutes vos questions.',
       whatsappLink: settings?.whatsappLink || '',
       socialLinks: socialLinks || []
     };

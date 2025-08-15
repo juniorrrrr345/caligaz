@@ -101,8 +101,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           <header className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-sm border-b border-white/20">
             <div className="flex items-center justify-between p-4">
               <div>
-                <h1 className="text-lg font-black text-white tracking-wider">FULL OPTION IDF</h1>
-                <p className="text-gray-400 text-xs uppercase tracking-[0.2em] font-medium">Panel Admin - FULL OPTION IDF</p>
+                <h1 className="text-lg font-black text-white tracking-wider">CaliGaz ⛽</h1>
+                <p className="text-gray-400 text-xs uppercase tracking-[0.2em] font-medium">Panel Admin - CaliGaz</p>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

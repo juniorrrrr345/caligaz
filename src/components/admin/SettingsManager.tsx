@@ -198,7 +198,7 @@ export default function SettingsManager() {
               value={settings.loadingText}
               onChange={(e) => updateField('loadingText', e.target.value)}
               className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white"
-                              placeholder="FULL OPTION IDF Chargement en cours 🚀"
+                              placeholder="CaliGaz Chargement en cours 🚀"
             />
             <p className="text-xs text-gray-400 mt-1">Ce texte apparaît pendant le chargement de la boutique</p>
           </div>
