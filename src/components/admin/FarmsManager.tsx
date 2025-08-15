@@ -136,10 +136,18 @@ export default function FarmsManager() {
         const farm = await response.json();
         console.log('✅ Farm créée:', farm);
         
-        toast.success('Farm créée avec succès');
+        // Afficher un message de succès
+        const successMsg = document.createElement('div');
+        successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        successMsg.textContent = '✅ Farm ajoutée avec succès!';
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+          successMsg.remove();
+        }, 3000);
         
         // Réinitialiser le formulaire
-        setNewFarm({ name: '', slug: '', menu: '', order: 0 });
+        setNewFarm({ name: '', slug: '', menu: 'caligaz', order: 0, isActive: true });
         setIsCreating(false);
         
         // Recharger les données comme dans ProductsManager
@@ -150,11 +158,27 @@ export default function FarmsManager() {
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
-        toast.error(error.error || 'Erreur lors de la création');
+        
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        errorMsg.textContent = `❌ Erreur: ${error.error || 'Impossible de créer la farm'}`;
+        document.body.appendChild(errorMsg);
+        
+        setTimeout(() => {
+          errorMsg.remove();
+        }, 3000);
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      toast.error('Erreur lors de la création de la farm');
+      
+      const errorMsg = document.createElement('div');
+      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+      errorMsg.textContent = '❌ Erreur lors de la création de la farm';
+      document.body.appendChild(errorMsg);
+      
+      setTimeout(() => {
+        errorMsg.remove();
+      }, 3000);
     }
   };
 
@@ -174,7 +198,16 @@ export default function FarmsManager() {
         const updatedFarm = await response.json();
         console.log('✅ Farm mise à jour:', updatedFarm);
         
-        toast.success('Farm mise à jour avec succès');
+        // Afficher un message de succès
+        const successMsg = document.createElement('div');
+        successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        successMsg.textContent = '✅ Farm modifiée avec succès!';
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+          successMsg.remove();
+        }, 3000);
+        
         setEditingFarm(null);
         
         // Recharger les données comme dans ProductsManager
@@ -183,11 +216,26 @@ export default function FarmsManager() {
         // Émettre l'événement pour synchroniser avec les autres composants
         appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
-        toast.error('Erreur lors de la mise à jour');
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        errorMsg.textContent = '❌ Erreur lors de la mise à jour';
+        document.body.appendChild(errorMsg);
+        
+        setTimeout(() => {
+          errorMsg.remove();
+        }, 3000);
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      toast.error('Erreur lors de la mise à jour de la farm');
+      
+      const errorMsg = document.createElement('div');
+      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+      errorMsg.textContent = '❌ Erreur lors de la mise à jour de la farm';
+      document.body.appendChild(errorMsg);
+      
+      setTimeout(() => {
+        errorMsg.remove();
+      }, 3000);
     }
   };
 
@@ -199,31 +247,62 @@ export default function FarmsManager() {
     console.log('🗑️ Suppression de la farm:', id);
 
     try {
+      // Afficher un loader pendant la suppression
+      const loadingMsg = document.createElement('div');
+      loadingMsg.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+      loadingMsg.textContent = '⏳ Suppression en cours...';
+      document.body.appendChild(loadingMsg);
+
+      // Envoyer la requête de suppression AVANT de mettre à jour l'interface
       const response = await fetch(`/api/farms/${id}`, {
         method: 'DELETE'
       });
 
+      // Supprimer le message de chargement
+      loadingMsg.remove();
+
       if (response.ok) {
-        console.log('✅ Farm supprimée');
-        
-        // Supprimer directement de la liste comme dans ProductsManager
+        // Suppression réussie - mettre à jour l'interface IMMÉDIATEMENT
         setFarms(prev => prev.filter(farm => farm._id !== id));
         
-        toast.success('Farm supprimée avec succès');
+        const successMsg = document.createElement('div');
+        successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        successMsg.textContent = '✅ Farm supprimée avec succès!';
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+          successMsg.remove();
+        }, 3000);
         
         // Émettre l'événement pour synchroniser avec les autres composants
         appEvents.emit(EVENTS.FARMS_UPDATED);
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);
-        toast.error(result.error || 'Erreur lors de la suppression');
+        
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        errorMsg.textContent = `❌ Erreur: ${result.error || 'Impossible de supprimer'}`;
+        document.body.appendChild(errorMsg);
+        
+        setTimeout(() => {
+          errorMsg.remove();
+        }, 3000);
         
         // Recharger les données en cas d'erreur
         await fetchData();
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      toast.error('Erreur de connexion');
+      
+      const errorMsg = document.createElement('div');
+      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+      errorMsg.textContent = '❌ Erreur de connexion';
+      document.body.appendChild(errorMsg);
+      
+      setTimeout(() => {
+        errorMsg.remove();
+      }, 3000);
     }
   };
 

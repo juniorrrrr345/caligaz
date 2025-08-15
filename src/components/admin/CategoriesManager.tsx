@@ -129,10 +129,18 @@ export default function CategoriesManager() {
         const category = await response.json();
         console.log('✅ Catégorie créée:', category);
         
-        toast.success('Catégorie créée avec succès');
+        // Afficher un message de succès
+        const successMsg = document.createElement('div');
+        successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        successMsg.textContent = '✅ Catégorie ajoutée avec succès!';
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+          successMsg.remove();
+        }, 3000);
         
         // Réinitialiser le formulaire
-        setNewCategory({ name: '', slug: '', description: '', menu: '', order: 0 });
+        setNewCategory({ name: '', slug: '', description: '', menu: 'caligaz', order: 0, isActive: true });
         setIsCreating(false);
         
         // Recharger les données comme dans ProductsManager
@@ -143,11 +151,27 @@ export default function CategoriesManager() {
       } else {
         const error = await response.json();
         console.error('❌ Erreur de création:', error);
-        toast.error(error.error || 'Erreur lors de la création');
+        
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        errorMsg.textContent = `❌ Erreur: ${error.error || 'Impossible de créer la catégorie'}`;
+        document.body.appendChild(errorMsg);
+        
+        setTimeout(() => {
+          errorMsg.remove();
+        }, 3000);
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      toast.error('Erreur lors de la création de la catégorie');
+      
+      const errorMsg = document.createElement('div');
+      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+      errorMsg.textContent = '❌ Erreur lors de la création de la catégorie';
+      document.body.appendChild(errorMsg);
+      
+      setTimeout(() => {
+        errorMsg.remove();
+      }, 3000);
     }
   };
 
@@ -167,7 +191,16 @@ export default function CategoriesManager() {
         const updatedCategory = await response.json();
         console.log('✅ Catégorie mise à jour:', updatedCategory);
         
-        toast.success('Catégorie mise à jour avec succès');
+        // Afficher un message de succès
+        const successMsg = document.createElement('div');
+        successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        successMsg.textContent = '✅ Catégorie modifiée avec succès!';
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+          successMsg.remove();
+        }, 3000);
+        
         setEditingCategory(null);
         
         // Recharger les données comme dans ProductsManager
@@ -176,11 +209,26 @@ export default function CategoriesManager() {
         // Émettre l'événement pour synchroniser avec les autres composants
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
-        toast.error('Erreur lors de la mise à jour');
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        errorMsg.textContent = '❌ Erreur lors de la mise à jour';
+        document.body.appendChild(errorMsg);
+        
+        setTimeout(() => {
+          errorMsg.remove();
+        }, 3000);
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      toast.error('Erreur lors de la mise à jour de la catégorie');
+      
+      const errorMsg = document.createElement('div');
+      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+      errorMsg.textContent = '❌ Erreur lors de la mise à jour de la catégorie';
+      document.body.appendChild(errorMsg);
+      
+      setTimeout(() => {
+        errorMsg.remove();
+      }, 3000);
     }
   };
 
