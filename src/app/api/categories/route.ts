@@ -43,6 +43,14 @@ export async function POST(request: Request) {
       data.menu = 'principal'; // Valeur par défaut
     }
     
+    // Générer le slug à partir du nom
+    if (data.name && !data.slug) {
+      data.slug = data.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+    
     const category = new Category(data);
     await category.save();
     return NextResponse.json(category, { status: 201 });
