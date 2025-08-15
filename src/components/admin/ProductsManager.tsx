@@ -29,6 +29,7 @@ export default function ProductsManager() {
   const [categories, setCategories] = useState<string[]>([]);
   const [farms, setFarms] = useState<string[]>([]);
   const [availableMenus, setAvailableMenus] = useState<MenuConfig[]>([]);
+  const [selectedMenuFilter, setSelectedMenuFilter] = useState<MenuType | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -60,14 +61,22 @@ export default function ProductsManager() {
     loadData();
   }, []);
 
+  // Recharger les produits quand le filtre de menu change
+  useEffect(() => {
+    if (availableMenus.length > 0) {
+      loadData();
+    }
+  }, [selectedMenuFilter]);
+
   const loadData = async () => {
     try {
       setLoading(true);
       console.log('🔄 Début du chargement des données...');
       
-      // Charger les produits
+      // Charger les produits avec filtre de menu
       console.log('📦 Chargement des produits...');
-      const productsRes = await fetch('/api/products');
+      const menuParam = selectedMenuFilter !== 'all' ? `?menu=${selectedMenuFilter}` : '';
+      const productsRes = await fetch(`/api/products${menuParam}`);
       console.log('📦 Réponse produits:', productsRes.status);
       if (productsRes.ok) {
         const productsData = await productsRes.json();
@@ -741,8 +750,35 @@ export default function ProductsManager() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-white">🛍️ Gestion des Produits</h1>
+            <p className="text-gray-400 text-sm mt-1">
+              {products.length} produit{products.length !== 1 ? 's' : ''} au total
+              {selectedMenuFilter !== 'all' && (
+                <span className="ml-2 px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs">
+                  {availableMenus.find(m => m.type === selectedMenuFilter)?.displayName}
+                </span>
+              )}
+            </p>
           </div>
-                  <div className="flex flex-col sm:flex-row gap-3">
+          
+          {/* Filtrage par menu */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-300 whitespace-nowrap">Filtrer par menu:</label>
+              <select
+                value={selectedMenuFilter}
+                onChange={(e) => setSelectedMenuFilter(e.target.value as MenuType | 'all')}
+                className="bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+              >
+                <option value="all">Tous les menus</option>
+                {availableMenus.map((menu) => (
+                  <option key={menu.type} value={menu.type}>
+                    {menu.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={handleAdd}
             className="bg-white/10 border border-white/20 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 backdrop-blur-sm shadow-lg hover:scale-[1.02] w-full sm:w-auto"
@@ -755,7 +791,8 @@ export default function ProductsManager() {
           >
             🧹 Nettoyer les prix
           </button>
-        </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -826,6 +863,9 @@ export default function ProductsManager() {
                   <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">
                     {product.farm} • {product.category}
                   </p>
+                  <p className="text-blue-300 text-xs mb-1">
+                    📋 {availableMenus.find(m => m.type === product.menu)?.displayName || product.menu}
+                  </p>
                   
 
                   
@@ -895,8 +935,11 @@ export default function ProductsManager() {
               <h3 className="font-bold text-white text-sm mb-1 uppercase tracking-wide">
                 {product.name}
               </h3>
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">
                 {product.farm}
+              </p>
+              <p className="text-blue-300 text-xs mb-2">
+                📋 {availableMenus.find(m => m.type === product.menu)?.displayName || product.menu}
               </p>
               
               {/* Prix principaux */}
