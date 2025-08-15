@@ -83,7 +83,7 @@ export default function MenuSelection({ onMenuSelect }: MenuSelectionProps) {
                                              <p className="text-gray-300 text-sm">
                          {menu.type === 'principal' 
                            ? 'Accédez au menu principal CaliGaz' 
-                           : 'Découvrez notre sélection Barcelone - 100g minimum de commande'
+                           : 'Découvrez notre sélection Barcelone - pour commander minimum 100g'
                          }
                        </p>
                     </div>
