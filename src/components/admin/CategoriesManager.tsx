@@ -192,31 +192,62 @@ export default function CategoriesManager() {
     console.log('🗑️ Suppression de la catégorie:', id);
 
     try {
+      // Afficher un loader pendant la suppression
+      const loadingMsg = document.createElement('div');
+      loadingMsg.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+      loadingMsg.textContent = '⏳ Suppression en cours...';
+      document.body.appendChild(loadingMsg);
+
+      // Envoyer la requête de suppression AVANT de mettre à jour l'interface
       const response = await fetch(`/api/categories/${id}`, {
         method: 'DELETE'
       });
 
+      // Supprimer le message de chargement
+      loadingMsg.remove();
+
       if (response.ok) {
-        console.log('✅ Catégorie supprimée');
-        
-        // Supprimer directement de la liste comme dans ProductsManager
+        // Suppression réussie - mettre à jour l'interface IMMÉDIATEMENT
         setCategories(prev => prev.filter(cat => cat._id !== id));
         
-        toast.success('Catégorie supprimée avec succès');
+        const successMsg = document.createElement('div');
+        successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        successMsg.textContent = '✅ Catégorie supprimée avec succès!';
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+          successMsg.remove();
+        }, 3000);
         
         // Émettre l'événement pour synchroniser avec les autres composants
         appEvents.emit(EVENTS.CATEGORIES_UPDATED);
       } else {
         const result = await response.json();
         console.error('❌ Erreur:', result);
-        toast.error(result.error || 'Erreur lors de la suppression');
+        
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+        errorMsg.textContent = `❌ Erreur: ${result.error || 'Impossible de supprimer'}`;
+        document.body.appendChild(errorMsg);
+        
+        setTimeout(() => {
+          errorMsg.remove();
+        }, 3000);
         
         // Recharger les données en cas d'erreur
         await fetchData();
       }
     } catch (error) {
       console.error('❌ Erreur:', error);
-      toast.error('Erreur de connexion');
+      
+      const errorMsg = document.createElement('div');
+      errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999] transition-all duration-300';
+      errorMsg.textContent = '❌ Erreur de connexion';
+      document.body.appendChild(errorMsg);
+      
+      setTimeout(() => {
+        errorMsg.remove();
+      }, 3000);
     }
   };
 
