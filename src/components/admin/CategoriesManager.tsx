@@ -6,8 +6,10 @@ interface Category {
   _id?: string;
   name: string;
   description?: string;
+  emoji?: string;
   menu: MenuType;
   isActive?: boolean;
+  order?: number;
 }
 
 export default function CategoriesManager() {
@@ -80,7 +82,10 @@ export default function CategoriesManager() {
     setFormData({
       name: '',
       description: '',
-      menu: 'principal'
+      menu: 'principal',
+      emoji: '',
+      isActive: true,
+      order: 0
     });
     setShowModal(true);
   };
@@ -91,16 +96,27 @@ export default function CategoriesManager() {
 
   const handleSave = async () => {
     try {
-      console.log('💾 Admin: Sauvegarde catégorie...');
+      console.log('💾 Admin: Sauvegarde catégorie...', formData);
       const method = editingCategory ? 'PUT' : 'POST';
       const url = editingCategory ? `/api/categories/${editingCategory._id}` : '/api/categories';
+      
+      // S'assurer que tous les champs nécessaires sont présents
+      const dataToSend = {
+        ...formData,
+        name: formData.name?.trim(),
+        emoji: formData.emoji || '',
+        isActive: formData.isActive !== false,
+        order: formData.order || 0
+      };
+      
+      console.log('📤 Données envoyées:', dataToSend);
       
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       });
 
       if (response.ok) {
@@ -108,7 +124,9 @@ export default function CategoriesManager() {
         setShowModal(false);
         await loadCategories(); // Recharger les données
       } else {
-        console.error('❌ Admin: Erreur sauvegarde:', response.status);
+        const errorData = await response.text();
+        console.error('❌ Admin: Erreur sauvegarde:', response.status, errorData);
+        alert(`Erreur lors de la sauvegarde: ${response.status} - ${errorData}`);
       }
     } catch (error) {
       console.error('❌ Admin: Erreur lors de la sauvegarde:', error);
