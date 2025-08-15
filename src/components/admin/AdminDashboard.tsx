@@ -1,8 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import ProductsManager from './ProductsManager';
-import CategoriesManager from './CategoriesManager';
-import FarmsManager from './FarmsManager';
 import MenusManager from './MenusManager';
 import SocialLinksManager from './SocialLinksManager';
 import SettingsManager from './SettingsManager';
@@ -14,7 +12,7 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type SectionType = 'products' | 'menus' | 'categories' | 'farms' | 'settings' | 'pages' | 'social';
+type SectionType = 'products' | 'menus' | 'settings' | 'socialLinks' | 'pages';
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [activeSection, setActiveSection] = useState<SectionType>('products');
@@ -48,29 +46,23 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const menuItems = [
     { id: 'products' as SectionType, label: 'Produits', icon: '🛍️' },
     { id: 'menus' as SectionType, label: 'Menus', icon: '📋' },
-    { id: 'categories' as SectionType, label: 'Catégories', icon: '🏷️' },
-    { id: 'farms' as SectionType, label: 'Farms', icon: '🏭' },
-    { id: 'settings' as SectionType, label: 'Configuration', icon: '⚙️' },
+    { id: 'settings' as SectionType, label: 'Paramètres', icon: '⚙️' },
+    { id: 'socialLinks' as SectionType, label: 'Réseaux sociaux', icon: '🔗' },
     { id: 'pages' as SectionType, label: 'Pages', icon: '📄' },
-    { id: 'social' as SectionType, label: 'Réseaux sociaux', icon: '🌐' },
   ];
 
-  const renderActiveSection = () => {
+  const renderContent = () => {
     switch (activeSection) {
       case 'products':
         return <ProductsManager />;
       case 'menus':
         return <MenusManager />;
-      case 'categories':
-        return <CategoriesManager />;
-      case 'farms':
-        return <FarmsManager />;
       case 'settings':
         return <SettingsManager />;
+      case 'socialLinks':
+        return <SocialLinksManager />;
       case 'pages':
         return <PagesManager />;
-      case 'social':
-        return <SocialLinksManager />;
       default:
         return <ProductsManager />;
     }
@@ -81,172 +73,115 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       {/* Desktop: Sidebar + Content */}
       <div className="hidden lg:flex">
         {/* Sidebar Desktop avec style ÎLE DE FRANCE FULL OPTION */}
-        <aside className="w-72 bg-black/90 backdrop-blur-sm border-r border-white/20 min-h-screen fixed left-0 top-0 z-50">
-          <div className="p-6 border-b border-white/20">
-            <h1 className="text-2xl font-black text-white tracking-wider">CaliGaz ⛽️</h1>
-            <p className="text-gray-400 text-xs mt-1 uppercase tracking-[0.2em] font-medium">Panel Admin - CaliGaz ⛽️</p>
+        <aside className="w-72 bg-gradient-to-b from-black via-gray-900 to-black border-r border-white/10 min-h-screen sticky top-0">
+          <div className="p-6 border-b border-white/10">
+            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-purple-600 animate-pulse">
+              ÎLE DE FRANCE
+            </h1>
+            <p className="text-xs text-white/60 mt-1 tracking-[0.3em] uppercase">Full Option Admin</p>
           </div>
+          
           <nav className="p-4">
-            <div className="space-y-3">
-              {menuItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center gap-4 shadow-lg hover:scale-[1.02] ${
-                    activeSection === item.id
-                      ? 'bg-white/10 border border-white/20 text-white font-medium backdrop-blur-sm shadow-xl'
-                      : 'bg-gray-900/50 border border-white/10 text-gray-300 hover:bg-white/5 hover:text-white hover:border-white/20'
-                  }`}
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              ))}
-            </div>
-            <div className="mt-8 pt-6 border-t border-white/20">
+            {menuItems.map((item) => (
               <button
-                onClick={onLogout}
-                className="w-full text-left p-4 rounded-xl text-red-400 bg-red-900/10 border border-red-400/20 hover:bg-red-900/20 hover:text-red-300 transition-all duration-300 flex items-center gap-4 shadow-lg hover:scale-[1.02]"
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`w-full text-left px-6 py-4 rounded-xl mb-2 transition-all duration-300 transform hover:scale-105 ${
+                  activeSection === item.id
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30'
+                    : 'hover:bg-white/10 text-white/70 hover:text-white'
+                }`}
               >
-                <span className="text-xl">🚪</span>
-                <span className="font-medium">Déconnexion</span>
+                <span className="text-2xl mr-3">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+                {activeSection === item.id && (
+                  <span className="float-right text-lg">→</span>
+                )}
               </button>
-            </div>
+            ))}
           </nav>
+          
+          <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-white/10">
+            <button
+              onClick={onLogout}
+              className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+            >
+              🚪 Déconnexion
+            </button>
+          </div>
         </aside>
 
         {/* Content Desktop */}
-        <main className="flex-1 ml-72">
-          <div className="p-6 min-h-screen">
-            {renderActiveSection()}
+        <main className="flex-1 p-8 overflow-y-auto">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-8 border border-white/10 shadow-2xl">
+              {renderContent()}
+            </div>
           </div>
         </main>
       </div>
 
-      {/* Mobile & Tablet: Interface adaptée */}
+      {/* Mobile: Burger Menu + Content */}
       <div className="lg:hidden">
-        {/* Mobile: Sidebar coulissante */}
-        <div className="sm:hidden">
-          {/* Header Mobile avec menu hamburger */}
-          <header className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-sm border-b border-white/20">
-            <div className="flex items-center justify-between p-4">
-              <div>
-                <h1 className="text-lg font-black text-white tracking-wider">CaliGaz ⛽️</h1>
-                <p className="text-gray-400 text-xs uppercase tracking-[0.2em] font-medium">Panel Admin - CaliGaz ⛽️</p>
-              </div>
+        {/* Mobile Header */}
+        <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-white/10 sticky top-0 z-50">
+          <div className="flex items-center justify-between p-4">
+            <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-purple-600">
+              ÎLE DE FRANCE
+            </h1>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-white p-2"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-40 bg-black/95 backdrop-blur-md">
+            <div className="p-4 pt-20">
+              {menuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveSection(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-6 py-4 rounded-xl mb-2 transition-all ${
+                    activeSection === item.id
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                      : 'bg-white/10 text-white/70'
+                  }`}
+                >
+                  <span className="text-2xl mr-3">{item.icon}</span>
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              ))}
+              
               <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg bg-white/10 border border-white/20 text-white"
+                onClick={onLogout}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white font-bold py-4 px-6 rounded-xl mt-6"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {mobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
+                🚪 Déconnexion
               </button>
             </div>
-          </header>
+          </div>
+        )}
 
-          {/* Sidebar coulissante Mobile */}
-          <aside className={`fixed top-0 left-0 z-40 w-80 h-screen bg-black/95 backdrop-blur-sm border-r border-white/20 transform transition-transform duration-300 ${
-            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}>
-            <div className="p-4 pt-20 border-b border-white/20">
-              <h2 className="text-lg font-bold text-white mb-2">Navigation</h2>
-            </div>
-            <nav className="p-4">
-              <div className="space-y-3">
-                {menuItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveSection(item.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center gap-4 shadow-lg ${
-                      activeSection === item.id
-                        ? 'bg-white/20 border border-white/30 text-white font-medium backdrop-blur-sm shadow-xl scale-105'
-                        : 'bg-gray-900/50 border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/20'
-                    }`}
-                  >
-                    <span className="text-xl">{item.icon}</span>
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="mt-8 pt-6 border-t border-white/20">
-                <button
-                  onClick={onLogout}
-                  className="w-full text-left p-4 rounded-xl text-red-400 bg-red-900/20 border border-red-400/30 hover:bg-red-900/30 hover:text-red-300 transition-all duration-300 flex items-center gap-4 shadow-lg"
-                >
-                  <span className="text-xl">🚪</span>
-                  <span className="font-medium">Déconnexion</span>
-                </button>
-              </div>
-            </nav>
-          </aside>
-
-          {/* Overlay pour fermer le menu */}
-          {mobileMenuOpen && (
-            <div 
-              className="fixed inset-0 z-30 bg-black/50" 
-              onClick={() => setMobileMenuOpen(false)}
-            />
-          )}
-
-          {/* Contenu Mobile */}
-          <main className="pt-20 min-h-screen">
-            <div className="p-3">
-              {renderActiveSection()}
-            </div>
-          </main>
-        </div>
-
-        {/* Tablette: Sidebar fixe mais plus petite */}
-        <div className="hidden sm:flex lg:hidden h-screen">
-          <aside className="w-64 bg-black/90 backdrop-blur-sm border-r border-white/20 min-h-screen overflow-y-auto">
-            <div className="p-4 border-b border-white/20">
-              <h1 className="text-lg font-black text-white tracking-wider">CaliGaz ⛽️</h1>
-              <p className="text-gray-400 text-xs mt-1 uppercase tracking-[0.2em] font-medium">Panel Admin - CaliGaz ⛽️</p>
-            </div>
-            <nav className="p-3">
-              <div className="space-y-2">
-                {menuItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full text-left p-3 rounded-xl transition-all duration-300 flex items-center gap-3 shadow-lg hover:scale-[1.02] text-sm ${
-                      activeSection === item.id
-                        ? 'bg-white/10 border border-white/20 text-white font-medium backdrop-blur-sm shadow-xl'
-                        : 'bg-gray-900/50 border border-white/10 text-gray-300 hover:bg-white/5 hover:text-white hover:border-white/20'
-                    }`}
-                  >
-                    <span className="text-lg">{item.icon}</span>
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="mt-6 pt-4 border-t border-white/20">
-                <button
-                  onClick={onLogout}
-                  className="w-full text-left p-3 rounded-xl text-red-400 bg-red-900/10 border border-red-400/20 hover:bg-red-900/20 hover:text-red-300 transition-all duration-300 flex items-center gap-3 shadow-lg hover:scale-[1.02] text-sm"
-                >
-                  <span className="text-lg">🚪</span>
-                  <span className="font-medium">Déconnexion</span>
-                </button>
-              </div>
-            </nav>
-          </aside>
-
-          {/* Contenu Tablette */}
-          <main className="flex-1 overflow-y-auto">
-            <div className="p-4 min-h-screen">
-              {renderActiveSection()}
-            </div>
-          </main>
-        </div>
+        {/* Mobile Content */}
+        <main className="p-4">
+          <div className="bg-black/40 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+            {renderContent()}
+          </div>
+        </main>
       </div>
     </div>
   );
