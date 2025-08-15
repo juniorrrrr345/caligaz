@@ -14,11 +14,11 @@ export async function GET() {
     if (!settings) {
       console.log('📦 Aucun settings trouvé, création des défauts');
       const defaultSettings = {
-        shopTitle: '',
-        shopSubtitle: '',
-        scrollingText: '',
-        loadingText: '',
-        bannerText: '',
+        shopTitle: 'CaliGaz',
+        shopSubtitle: '⛽ Votre boutique en ligne',
+        scrollingText: '🔥 CaliGaz - Premium Quality 🔥',
+        loadingText: 'CaliGaz se charge...',
+        bannerText: 'CaliGaz - Livraison rapide',
         backgroundImage: '',
         backgroundOpacity: 20,
         backgroundBlur: 5,
@@ -50,10 +50,10 @@ export async function GET() {
     
     // Fallback settings si erreur DB
     const fallbackSettings = {
-      shopTitle: '',
-      shopSubtitle: '',
-      scrollingText: '',
-      bannerText: '',
+      shopTitle: 'CaliGaz',
+      shopSubtitle: '⛽ Votre boutique en ligne',
+      scrollingText: '🔥 CaliGaz - Premium Quality 🔥',
+      bannerText: 'CaliGaz - Livraison rapide',
       backgroundImage: '',
       backgroundOpacity: 20,
       backgroundBlur: 5,
