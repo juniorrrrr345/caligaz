@@ -107,22 +107,39 @@ export default function FarmsManager() {
   const handleDelete = async (farmId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette farm ?')) return;
 
+    // Supprimer immédiatement de l'interface (optimistic update)
+    const previousFarms = farms;
+    setFarms(farms.filter(f => f._id !== farmId));
+
     try {
       const response = await fetch(`/api/farms/${farmId}`, {
         method: 'DELETE',
       });
 
-      if (response.ok) {
-        // Mise à jour immédiate de l'interface
-        setFarms(prev => prev.filter(f => f._id !== farmId));
-      } else {
-        await loadData();
+      // Peu importe la réponse, on garde la suppression visuelle
+      // Car même si l'API retourne 404, c'est que l'élément n'existe plus
+      if (!response.ok && response.status !== 404) {
+        console.error('Erreur serveur lors de la suppression');
+        // Restaurer seulement si c'est une vraie erreur (pas 404)
+        setFarms(previousFarms);
       }
     } catch (error) {
-      console.error('Erreur:', error);
-      await loadData();
+      console.error('Erreur réseau:', error);
+      // Restaurer en cas d'erreur réseau
+      setFarms(previousFarms);
+      alert('Erreur de connexion. Veuillez réessayer.');
     }
   };
+
+  // Grouper les farms par menu
+  const farmsByMenu = farms.reduce((acc, farm) => {
+    const menuKey = farm.menu || 'autres';
+    if (!acc[menuKey]) {
+      acc[menuKey] = [];
+    }
+    acc[menuKey].push(farm);
+    return acc;
+  }, {} as Record<string, typeof farms>);
 
   if (loading) {
     return (
@@ -136,7 +153,7 @@ export default function FarmsManager() {
     <div>
       <div className="mb-6 flex justify-between items-center">
         <h2 className="text-2xl font-bold text-white">
-          Gestion des Farms
+          Gestion des Farms ({farms.length} au total)
         </h2>
         <button
           onClick={() => {
@@ -156,39 +173,50 @@ export default function FarmsManager() {
         </button>
       </div>
 
-      {/* Liste des farms */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {farms.map((farm) => (
-          <div key={farm._id} className="bg-gray-900/50 border border-white/20 rounded-xl p-4">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-white font-bold">{farm.name}</h3>
-              <span className={`px-2 py-1 rounded text-xs ${
-                farm.isActive ? 'bg-green-600' : 'bg-red-600'
-              }`}>
-                {farm.isActive ? 'Active' : 'Inactive'}
-              </span>
-            </div>
+      {/* Affichage groupé par menu */}
+      {Object.entries(farmsByMenu).map(([menuSlug, menuFarms]) => {
+        const menu = menus.find(m => m.slug === menuSlug);
+        return (
+          <div key={menuSlug} className="mb-8">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              {menu ? `${menu.emoji} ${menu.name}` : menuSlug}
+              <span className="text-sm text-gray-400">({menuFarms.length} farms)</span>
+            </h3>
             
-            <p className="text-gray-400 text-sm mb-2">Menu: {farm.menu}</p>
-            <p className="text-gray-500 text-xs mb-3">Slug: {farm.slug}</p>
-            
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleEdit(farm)}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-sm"
-              >
-                ✏️ Modifier
-              </button>
-              <button
-                onClick={() => farm._id && handleDelete(farm._id)}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-sm"
-              >
-                🗑️ Supprimer
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {menuFarms.map((farm) => (
+                <div key={farm._id} className="bg-gray-900/50 border border-white/20 rounded-xl p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-white font-bold">{farm.name}</h3>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      farm.isActive ? 'bg-green-600' : 'bg-red-600'
+                    }`}>
+                      {farm.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  
+                  <p className="text-gray-500 text-xs mb-3">Slug: {farm.slug}</p>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(farm)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-sm"
+                    >
+                      ✏️ Modifier
+                    </button>
+                    <button
+                      onClick={() => farm._id && handleDelete(farm._id)}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-sm"
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
 
       {farms.length === 0 && (
         <div className="text-center text-gray-400 py-8">

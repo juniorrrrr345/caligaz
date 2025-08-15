@@ -110,29 +110,27 @@ export default function CategoriesManager() {
   const handleDelete = async (categoryId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) return;
 
+    // Supprimer immédiatement de l'interface (optimistic update)
+    const previousCategories = categories;
+    setCategories(categories.filter(c => c._id !== categoryId));
+
     try {
-      // D'abord supprimer visuellement
-      setCategories(prev => prev.filter(c => c._id !== categoryId));
-      
-      // Ensuite supprimer dans la base de données
       const response = await fetch(`/api/categories/${categoryId}`, {
         method: 'DELETE',
       });
 
-      if (!response.ok) {
-        // Si erreur, recharger pour restaurer l'état correct
-        console.error('Erreur lors de la suppression');
-        await loadData();
-      } else {
-        // Si succès, recharger quand même après un délai pour synchroniser
-        setTimeout(() => {
-          loadData();
-        }, 500);
+      // Peu importe la réponse, on garde la suppression visuelle
+      // Car même si l'API retourne 404, c'est que l'élément n'existe plus
+      if (!response.ok && response.status !== 404) {
+        console.error('Erreur serveur lors de la suppression');
+        // Restaurer seulement si c'est une vraie erreur (pas 404)
+        setCategories(previousCategories);
       }
     } catch (error) {
-      console.error('Erreur:', error);
-      // En cas d'erreur, recharger
-      await loadData();
+      console.error('Erreur réseau:', error);
+      // Restaurer en cas d'erreur réseau
+      setCategories(previousCategories);
+      alert('Erreur de connexion. Veuillez réessayer.');
     }
   };
 
@@ -144,11 +142,21 @@ export default function CategoriesManager() {
     );
   }
 
+  // Grouper les catégories par menu
+  const categoriesByMenu = categories.reduce((acc, category) => {
+    const menuKey = category.menu || 'autres';
+    if (!acc[menuKey]) {
+      acc[menuKey] = [];
+    }
+    acc[menuKey].push(category);
+    return acc;
+  }, {} as Record<string, typeof categories>);
+
   return (
     <div>
       <div className="mb-6 flex justify-between items-center">
         <h2 className="text-2xl font-bold text-white">
-          Gestion des Catégories
+          Gestion des Catégories ({categories.length} au total)
         </h2>
         <button
           onClick={() => {
@@ -169,39 +177,50 @@ export default function CategoriesManager() {
         </button>
       </div>
 
-      {/* Liste des catégories */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((category) => (
-          <div key={category._id} className="bg-gray-900/50 border border-white/20 rounded-xl p-4">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-white font-bold">{category.name}</h3>
-              <span className={`px-2 py-1 rounded text-xs ${
-                category.isActive ? 'bg-green-600' : 'bg-red-600'
-              }`}>
-                {category.isActive ? 'Actif' : 'Inactif'}
-              </span>
-            </div>
+      {/* Affichage groupé par menu */}
+      {Object.entries(categoriesByMenu).map(([menuSlug, menuCategories]) => {
+        const menu = menus.find(m => m.slug === menuSlug);
+        return (
+          <div key={menuSlug} className="mb-8">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              {menu ? `${menu.emoji} ${menu.name}` : menuSlug}
+              <span className="text-sm text-gray-400">({menuCategories.length} catégories)</span>
+            </h3>
             
-            <p className="text-gray-400 text-sm mb-2">Menu: {category.menu}</p>
-            <p className="text-gray-500 text-xs mb-3">Slug: {category.slug}</p>
-            
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleEdit(category)}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-sm"
-              >
-                ✏️ Modifier
-              </button>
-              <button
-                onClick={() => category._id && handleDelete(category._id)}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-sm"
-              >
-                🗑️ Supprimer
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {menuCategories.map((category) => (
+                <div key={category._id} className="bg-gray-900/50 border border-white/20 rounded-xl p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-white font-bold">{category.name}</h3>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      category.isActive ? 'bg-green-600' : 'bg-red-600'
+                    }`}>
+                      {category.isActive ? 'Actif' : 'Inactif'}
+                    </span>
+                  </div>
+                  
+                  <p className="text-gray-500 text-xs mb-3">Slug: {category.slug}</p>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(category)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-sm"
+                    >
+                      ✏️ Modifier
+                    </button>
+                    <button
+                      onClick={() => category._id && handleDelete(category._id)}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-sm"
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
 
       {categories.length === 0 && (
         <div className="text-center text-gray-400 py-8">
