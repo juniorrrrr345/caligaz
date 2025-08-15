@@ -5,18 +5,19 @@ import CachePreloader from '@/components/CachePreloader'
 import GlobalBackgroundProvider from '@/components/GlobalBackgroundProvider'
 import Cart from '@/components/Cart'
 import { Toaster } from 'react-hot-toast'
+import { MenuProvider } from '@/contexts/MenuContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'FULL OPTION IDF - Boutique en ligne',
-  description: 'FULL OPTION IDF - Votre boutique en ligne. Produits de qualité et livraison rapide.',
+  title: 'CaliGaz - Boutique en ligne',
+  description: 'CaliGaz - Votre boutique en ligne. Produits de qualité et livraison rapide.',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
   themeColor: '#000000',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'FULL OPTION IDF'
+    title: 'CaliGaz'
   },
   formatDetection: {
     telephone: false
@@ -105,26 +106,28 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} antialiased`} suppressHydrationWarning style={{ backgroundColor: 'black' }}>
-        <GlobalBackgroundProvider />
-        <CachePreloader />
-        <Toaster 
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#333',
-              color: '#fff',
-            },
-            success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
+        <MenuProvider>
+          <GlobalBackgroundProvider />
+          <CachePreloader />
+          <Toaster 
+            position="top-center"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#333',
+                color: '#fff',
               },
-            },
-          }}
-        />
-        <Cart />
-        {children}
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+          <Cart />
+          {children}
+        </MenuProvider>
       </body>
     </html>
   )

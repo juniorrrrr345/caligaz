@@ -15,6 +15,12 @@ const FarmSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  menu: {
+    type: String,
+    required: true,
+    enum: ['principal', 'barcelone'],
+    default: 'principal'
+  },
   isActive: {
     type: Boolean,
     default: true

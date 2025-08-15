@@ -1,10 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { MenuType, MenuConfig } from '@/types';
 
 interface Category {
   _id?: string;
   name: string;
   description?: string;
+  menu: MenuType;
+  isActive?: boolean;
 }
 
 export default function CategoriesManager() {
@@ -12,20 +15,51 @@ export default function CategoriesManager() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [selectedMenuFilter, setSelectedMenuFilter] = useState<MenuType | 'all'>('all');
+  const [availableMenus, setAvailableMenus] = useState<MenuConfig[]>([]);
   const [formData, setFormData] = useState<Partial<Category>>({
     name: '',
-    description: ''
+    description: '',
+    menu: 'principal'
   });
 
   useEffect(() => {
+    loadMenus();
     loadCategories();
   }, []);
+
+  const loadMenus = async () => {
+    try {
+      const response = await fetch('/api/menus');
+      if (response.ok) {
+        const menus = await response.json();
+        setAvailableMenus(menus);
+      }
+    } catch (error) {
+      console.error('Erreur chargement menus:', error);
+    }
+  };
 
   const loadCategories = async () => {
     try {
       setLoading(true);
       console.log('🏷️ Admin: Chargement des catégories...');
-      const response = await fetch('/api/categories');
+      
+      // Construire l'URL avec le filtre de menu si nécessaire
+      let url = '/api/categories/all';
+      if (selectedMenuFilter !== 'all') {
+        url += `?menu=${selectedMenuFilter}`;
+      }
+      
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
       console.log('🏷️ Admin: Réponse catégories:', response.status);
       if (response.ok) {
         const data = await response.json();
@@ -41,6 +75,11 @@ export default function CategoriesManager() {
     }
   };
 
+  // Recharger quand le filtre de menu change
+  useEffect(() => {
+    loadCategories();
+  }, [selectedMenuFilter]);
+
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setFormData(category);
@@ -51,22 +90,21 @@ export default function CategoriesManager() {
     setEditingCategory(null);
     setFormData({
       name: '',
-      description: ''
+      description: '',
+      menu: 'principal'
     });
     setShowModal(true);
   };
 
-  const handleSave = async () => {
-    if (!formData.name) {
-      alert('Veuillez entrer un nom pour la catégorie');
-      return;
-    }
+  const updateFormField = (field: keyof Category, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
+  const handleSave = async () => {
     try {
-      const url = editingCategory ? `/api/categories/${editingCategory._id}` : '/api/categories';
+      console.log('💾 Admin: Sauvegarde catégorie...');
       const method = editingCategory ? 'PUT' : 'POST';
-      
-      console.log('💾 Sauvegarde catégorie:', { url, method, data: formData });
+      const url = editingCategory ? `/api/categories/${editingCategory._id}` : '/api/categories';
       
       const response = await fetch(url, {
         method,
@@ -77,109 +115,171 @@ export default function CategoriesManager() {
       });
 
       if (response.ok) {
-        // Message de succès
-        const successMsg = document.createElement('div');
-        successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999]';
-        successMsg.textContent = editingCategory ? '✅ Catégorie modifiée!' : '✅ Catégorie ajoutée!';
-        document.body.appendChild(successMsg);
-        setTimeout(() => successMsg.remove(), 3000);
-        
+        console.log('✅ Admin: Catégorie sauvegardée');
         setShowModal(false);
-        await loadCategories();
-        
-        // Forcer la synchronisation
-        try {
-          await fetch('/api/cache/invalidate', { method: 'POST' });
-        } catch (e) {
-          console.error('Erreur invalidation cache:', e);
-        }
+        await loadCategories(); // Recharger les données
       } else {
-        const errorText = await response.text();
-        console.error('❌ Erreur sauvegarde:', errorText);
-        alert(`Erreur: ${response.status} - ${errorText}`);
+        console.error('❌ Admin: Erreur sauvegarde:', response.status);
       }
     } catch (error) {
-      console.error('❌ Erreur:', error);
-      alert('Erreur lors de la sauvegarde');
+      console.error('❌ Admin: Erreur lors de la sauvegarde:', error);
     }
   };
 
-  const handleDelete = async (categoryId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
-      try {
-        const response = await fetch(`/api/categories/${categoryId}`, {
-          method: 'DELETE',
-        });
+  const handleDelete = async (id: string) => {
+    try {
+      console.log('🗑️ Admin: Suppression catégorie...');
+      const response = await fetch(`/api/categories/${id}`, {
+        method: 'DELETE',
+      });
 
-        if (response.ok) {
-          loadCategories();
-        } else {
-          alert('Erreur lors de la suppression');
-        }
-      } catch (error) {
-        console.error('Erreur:', error);
-        alert('Erreur lors de la suppression');
+      if (response.ok || response.status === 404) {
+        console.log('✅ Admin: Catégorie supprimée');
+        await loadCategories(); // Recharger les données
+      } else {
+        console.error('❌ Admin: Erreur suppression:', response.status);
       }
+    } catch (error) {
+      console.error('❌ Admin: Erreur lors de la suppression:', error);
     }
   };
 
-  const updateFormField = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Regrouper les catégories par menu pour l'affichage
+  const categoriesByMenu = categories.reduce((acc, category) => {
+    const menu = category.menu || 'principal';
+    if (!acc[menu]) {
+      acc[menu] = [];
+    }
+    acc[menu].push(category);
+    return acc;
+  }, {} as Record<string, Category[]>);
+
+  const getMenuDisplayName = (menuType: MenuType) => {
+    const menu = availableMenus.find(m => m.type === menuType);
+    return menu ? menu.displayName : menuType;
   };
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="text-white">Chargement...</div>
+      <div className="p-4 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-gray-400">Chargement des catégories...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-white">Gestion des Catégories</h1>
-        <button
-          onClick={handleAdd}
-          className="bg-white hover:bg-gray-100 text-black font-bold py-2 px-4 rounded-lg flex items-center space-x-2 w-full sm:w-auto"
-        >
-          <span>➕</span>
-          <span className="hidden sm:inline">Ajouter une catégorie</span>
-          <span className="sm:hidden">Nouvelle</span>
-        </button>
-      </div>
-
-      {/* Liste des catégories avec scroll */}
-      <div className="max-h-[70vh] overflow-y-auto pr-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {categories.map((category) => (
-            <div key={category._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="font-bold text-white text-xl">{category.name}</h3>
-              </div>
-            
-            {category.description && (
-              <p className="text-gray-400 text-sm mb-4">{category.description}</p>
-            )}
-            
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handleEdit(category)}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
-              >
-                ✏️ Modifier
-              </button>
-              <button
-                onClick={() => handleDelete(category._id!)}
-                className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
-              >
-                🗑️
-              </button>
-            </div>
-          </div>
-        ))}
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-2">Gestion des Catégories</h1>
+          <p className="text-gray-400">({categories.length} au total)</p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Filtre par menu */}
+          <select
+            value={selectedMenuFilter}
+            onChange={(e) => setSelectedMenuFilter(e.target.value as MenuType | 'all')}
+            className="bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
+          >
+            <option value="all">Tous les menus</option>
+            {availableMenus.map((menu) => (
+              <option key={menu.type} value={menu.type}>
+                {menu.displayName}
+              </option>
+            ))}
+          </select>
+          
+          <button
+            onClick={handleAdd}
+            className="bg-white hover:bg-gray-100 text-black font-bold py-2 px-4 rounded-lg whitespace-nowrap"
+          >
+            ➕ Nouvelle Catégorie
+          </button>
         </div>
       </div>
+
+      {/* Affichage par menu */}
+      {selectedMenuFilter === 'all' ? (
+        // Vue groupée par menu
+        <div className="space-y-8">
+          {Object.entries(categoriesByMenu).map(([menuType, menuCategories]) => (
+            <div key={menuType}>
+              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                {menuType === 'principal' ? '⛽' : '🇪🇸'} {getMenuDisplayName(menuType as MenuType)}
+                <span className="text-sm text-gray-400">({menuCategories.length} catégories)</span>
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                {menuCategories.map((category) => (
+                  <div key={category._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="font-bold text-white text-xl">{category.name}</h3>
+                      <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                        {category.isActive ? 'Actif' : 'Inactif'}
+                      </span>
+                    </div>
+                  
+                    {category.description && (
+                      <p className="text-gray-400 text-sm mb-4">{category.description}</p>
+                    )}
+                  
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEdit(category)}
+                        className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
+                      >
+                        ✏️ Modifier
+                      </button>
+                      <button
+                        onClick={() => handleDelete(category._id!)}
+                        className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        // Vue filtrée
+        <div className="max-h-[70vh] overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {categories.map((category) => (
+              <div key={category._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="font-bold text-white text-xl">{category.name}</h3>
+                  <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                    {category.isActive ? 'Actif' : 'Inactif'}
+                  </span>
+                </div>
+              
+                {category.description && (
+                  <p className="text-gray-400 text-sm mb-4">{category.description}</p>
+                )}
+              
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(category)}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
+                  >
+                    ✏️ Modifier
+                  </button>
+                  <button
+                    onClick={() => handleDelete(category._id!)}
+                    className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Modal d'édition */}
       {showModal && (
@@ -199,6 +299,21 @@ export default function CategoriesManager() {
                   className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
                   placeholder="Ex: 120U ++ 🇲🇦"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Menu</label>
+                <select
+                  value={formData.menu || 'principal'}
+                  onChange={(e) => updateFormField('menu', e.target.value)}
+                  className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
+                >
+                  {availableMenus.map((menu) => (
+                    <option key={menu.type} value={menu.type}>
+                      {menu.displayName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

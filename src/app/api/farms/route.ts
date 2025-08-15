@@ -2,10 +2,22 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb-fixed';
 import Farm from '@/models/Farm';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await connectDB();
-    const farms = await Farm.find({ isActive: true }).sort({ name: 1 });
+    
+    const { searchParams } = new URL(request.url);
+    const menuFilter = searchParams.get('menu');
+    
+    // Créer le filtre de base
+    const filter: any = { isActive: true };
+    
+    // Ajouter le filtre par menu si spécifié
+    if (menuFilter && ['principal', 'barcelone'].includes(menuFilter)) {
+      filter.menu = menuFilter;
+    }
+    
+    const farms = await Farm.find(filter).sort({ name: 1 });
     
     // Headers pour éviter le cache et assurer la synchronisation instantanée
     return NextResponse.json(farms, {
@@ -25,6 +37,12 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const data = await request.json();
+    
+    // Valider que le menu est correct
+    if (!data.menu || !['principal', 'barcelone'].includes(data.menu)) {
+      data.menu = 'principal'; // Valeur par défaut
+    }
+    
     const farm = new Farm(data);
     await farm.save();
     return NextResponse.json(farm, { status: 201 });

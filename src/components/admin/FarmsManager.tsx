@@ -1,10 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { MenuType, MenuConfig } from '@/types';
 
 interface Farm {
   _id?: string;
   name: string;
   description?: string;
+  country?: string;
+  menu: MenuType;
+  isActive?: boolean;
 }
 
 export default function FarmsManager() {
@@ -12,29 +16,71 @@ export default function FarmsManager() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
+  const [selectedMenuFilter, setSelectedMenuFilter] = useState<MenuType | 'all'>('all');
+  const [availableMenus, setAvailableMenus] = useState<MenuConfig[]>([]);
   const [formData, setFormData] = useState<Partial<Farm>>({
     name: '',
-    description: ''
+    description: '',
+    country: '',
+    menu: 'principal'
   });
 
   useEffect(() => {
+    loadMenus();
     loadFarms();
   }, []);
+
+  const loadMenus = async () => {
+    try {
+      const response = await fetch('/api/menus');
+      if (response.ok) {
+        const menus = await response.json();
+        setAvailableMenus(menus);
+      }
+    } catch (error) {
+      console.error('Erreur chargement menus:', error);
+    }
+  };
 
   const loadFarms = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/farms');
+      console.log('🏭 Admin: Chargement des farms...');
+      
+      // Construire l'URL avec le filtre de menu si nécessaire
+      let url = '/api/farms/all';
+      if (selectedMenuFilter !== 'all') {
+        url += `?menu=${selectedMenuFilter}`;
+      }
+      
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
+      console.log('🏭 Admin: Réponse farms:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('🏭 Admin: Farms chargées:', data.length);
         setFarms(data);
+      } else {
+        console.error('🏭 Admin: Erreur HTTP:', response.status);
       }
     } catch (error) {
-      console.error('Erreur lors du chargement:', error);
+      console.error('❌ Admin: Erreur lors du chargement des farms:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Recharger quand le filtre de menu change
+  useEffect(() => {
+    loadFarms();
+  }, [selectedMenuFilter]);
 
   const handleEdit = (farm: Farm) => {
     setEditingFarm(farm);
@@ -46,22 +92,22 @@ export default function FarmsManager() {
     setEditingFarm(null);
     setFormData({
       name: '',
-      description: ''
+      description: '',
+      country: '',
+      menu: 'principal'
     });
     setShowModal(true);
   };
 
-  const handleSave = async () => {
-    if (!formData.name) {
-      alert('Veuillez entrer un nom pour la farm');
-      return;
-    }
+  const updateFormField = (field: keyof Farm, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
+  const handleSave = async () => {
     try {
-      const url = editingFarm ? `/api/farms/${editingFarm._id}` : '/api/farms';
+      console.log('💾 Admin: Sauvegarde farm...');
       const method = editingFarm ? 'PUT' : 'POST';
-      
-      console.log('💾 Sauvegarde farm:', { url, method, data: formData });
+      const url = editingFarm ? `/api/farms/${editingFarm._id}` : '/api/farms';
       
       const response = await fetch(url, {
         method,
@@ -72,109 +118,179 @@ export default function FarmsManager() {
       });
 
       if (response.ok) {
-        // Message de succès
-        const successMsg = document.createElement('div');
-        successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[9999]';
-        successMsg.textContent = editingFarm ? '✅ Farm modifiée!' : '✅ Farm ajoutée!';
-        document.body.appendChild(successMsg);
-        setTimeout(() => successMsg.remove(), 3000);
-        
+        console.log('✅ Admin: Farm sauvegardée');
         setShowModal(false);
-        await loadFarms();
-        
-        // Forcer la synchronisation
-        try {
-          await fetch('/api/cache/invalidate', { method: 'POST' });
-        } catch (e) {
-          console.error('Erreur invalidation cache:', e);
-        }
+        await loadFarms(); // Recharger les données
       } else {
-        const errorText = await response.text();
-        console.error('❌ Erreur sauvegarde:', errorText);
-        alert(`Erreur: ${response.status} - ${errorText}`);
+        console.error('❌ Admin: Erreur sauvegarde:', response.status);
       }
     } catch (error) {
-      console.error('❌ Erreur:', error);
-      alert('Erreur lors de la sauvegarde');
+      console.error('❌ Admin: Erreur lors de la sauvegarde:', error);
     }
   };
 
-  const handleDelete = async (farmId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette farm ?')) {
-      try {
-        const response = await fetch(`/api/farms/${farmId}`, {
-          method: 'DELETE',
-        });
+  const handleDelete = async (id: string) => {
+    try {
+      console.log('🗑️ Admin: Suppression farm...');
+      const response = await fetch(`/api/farms/${id}`, {
+        method: 'DELETE',
+      });
 
-        if (response.ok) {
-          loadFarms();
-        } else {
-          alert('Erreur lors de la suppression');
-        }
-      } catch (error) {
-        console.error('Erreur:', error);
-        alert('Erreur lors de la suppression');
+      if (response.ok || response.status === 404) {
+        console.log('✅ Admin: Farm supprimée');
+        await loadFarms(); // Recharger les données
+      } else {
+        console.error('❌ Admin: Erreur suppression:', response.status);
       }
+    } catch (error) {
+      console.error('❌ Admin: Erreur lors de la suppression:', error);
     }
   };
 
-  const updateFormField = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Regrouper les farms par menu pour l'affichage
+  const farmsByMenu = farms.reduce((acc, farm) => {
+    const menu = farm.menu || 'principal';
+    if (!acc[menu]) {
+      acc[menu] = [];
+    }
+    acc[menu].push(farm);
+    return acc;
+  }, {} as Record<string, Farm[]>);
+
+  const getMenuDisplayName = (menuType: MenuType) => {
+    const menu = availableMenus.find(m => m.type === menuType);
+    return menu ? menu.displayName : menuType;
   };
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="text-white">Chargement...</div>
+      <div className="p-4 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-gray-400">Chargement des farms...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-white">Gestion des Farms</h1>
-        <button
-          onClick={handleAdd}
-          className="bg-white hover:bg-gray-100 text-black font-bold py-2 px-4 rounded-lg flex items-center space-x-2 w-full sm:w-auto"
-        >
-          <span>➕</span>
-          <span className="hidden sm:inline">Ajouter une farm</span>
-          <span className="sm:hidden">Nouvelle</span>
-        </button>
-      </div>
-
-      {/* Liste des farms avec scroll */}
-      <div className="max-h-[70vh] overflow-y-auto pr-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {farms.map((farm) => (
-            <div key={farm._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="font-bold text-white text-xl">{farm.name}</h3>
-              </div>
-            
-            {farm.description && (
-              <p className="text-gray-400 text-sm mb-4">{farm.description}</p>
-            )}
-            
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handleEdit(farm)}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
-              >
-                ✏️ Modifier
-              </button>
-              <button
-                onClick={() => handleDelete(farm._id!)}
-                className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
-              >
-                🗑️
-              </button>
-            </div>
-          </div>
-        ))}
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-2">Gestion des Farms</h1>
+          <p className="text-gray-400">({farms.length} au total)</p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Filtre par menu */}
+          <select
+            value={selectedMenuFilter}
+            onChange={(e) => setSelectedMenuFilter(e.target.value as MenuType | 'all')}
+            className="bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
+          >
+            <option value="all">Tous les menus</option>
+            {availableMenus.map((menu) => (
+              <option key={menu.type} value={menu.type}>
+                {menu.displayName}
+              </option>
+            ))}
+          </select>
+          
+          <button
+            onClick={handleAdd}
+            className="bg-white hover:bg-gray-100 text-black font-bold py-2 px-4 rounded-lg whitespace-nowrap"
+          >
+            ➕ Nouvelle Farm
+          </button>
         </div>
       </div>
+
+      {/* Affichage par menu */}
+      {selectedMenuFilter === 'all' ? (
+        // Vue groupée par menu
+        <div className="space-y-8">
+          {Object.entries(farmsByMenu).map(([menuType, menuFarms]) => (
+            <div key={menuType}>
+              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                {menuType === 'principal' ? '⛽' : '🇪🇸'} {getMenuDisplayName(menuType as MenuType)}
+                <span className="text-sm text-gray-400">({menuFarms.length} farms)</span>
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                {menuFarms.map((farm) => (
+                  <div key={farm._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="font-bold text-white text-xl">{farm.name}</h3>
+                      <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                        {farm.isActive ? 'Actif' : 'Inactif'}
+                      </span>
+                    </div>
+                  
+                    {farm.country && (
+                      <p className="text-gray-400 text-sm mb-2">📍 {farm.country}</p>
+                    )}
+                    
+                    {farm.description && (
+                      <p className="text-gray-400 text-sm mb-4">{farm.description}</p>
+                    )}
+                  
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEdit(farm)}
+                        className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
+                      >
+                        ✏️ Modifier
+                      </button>
+                      <button
+                        onClick={() => handleDelete(farm._id!)}
+                        className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        // Vue filtrée
+        <div className="max-h-[70vh] overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {farms.map((farm) => (
+              <div key={farm._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="font-bold text-white text-xl">{farm.name}</h3>
+                  <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                    {farm.isActive ? 'Actif' : 'Inactif'}
+                  </span>
+                </div>
+              
+                {farm.country && (
+                  <p className="text-gray-400 text-sm mb-2">📍 {farm.country}</p>
+                )}
+                
+                {farm.description && (
+                  <p className="text-gray-400 text-sm mb-4">{farm.description}</p>
+                )}
+              
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(farm)}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
+                  >
+                    ✏️ Modifier
+                  </button>
+                  <button
+                    onClick={() => handleDelete(farm._id!)}
+                    className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Modal d'édition */}
       {showModal && (
@@ -192,7 +308,33 @@ export default function FarmsManager() {
                   value={formData.name || ''}
                   onChange={(e) => updateFormField('name', e.target.value)}
                   className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
-                  placeholder="Ex: REAL FARMZ"
+                  placeholder="Ex: CaliGaz"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Menu</label>
+                <select
+                  value={formData.menu || 'principal'}
+                  onChange={(e) => updateFormField('menu', e.target.value)}
+                  className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
+                >
+                  {availableMenus.map((menu) => (
+                    <option key={menu.type} value={menu.type}>
+                      {menu.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Pays</label>
+                <input
+                  type="text"
+                  value={formData.country || ''}
+                  onChange={(e) => updateFormField('country', e.target.value)}
+                  className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
+                  placeholder="Ex: France"
                 />
               </div>
 
