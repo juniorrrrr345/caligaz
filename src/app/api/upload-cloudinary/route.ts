@@ -16,9 +16,7 @@ export async function POST(request: NextRequest) {
       api_secret: cloudinary.config().api_secret ? 'OK' : 'MANQUANT'
     });
     
-    // NOUVELLE APPROCHE: Cloner la requête pour éviter "body disturbed"
-    const clonedRequest = request.clone();
-    const formData = await clonedRequest.formData();
+    const formData = await request.formData();
     const file = formData.get('file') as File;
     
     if (!file) {
@@ -53,25 +51,34 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // AUCUNE LIMITE de taille pour TOUS les fichiers
-    // Images, vidéos, GIFs - tout est autorisé
     const isVideo = file.type.startsWith('video/') || file.type === 'image/gif';
 
     console.log('☁️ Upload vers Cloudinary...');
+
+    // Convertir le fichier en buffer
+    let bytes, buffer;
+    try {
+      bytes = await file.arrayBuffer();
+      buffer = Buffer.from(bytes);
+      console.log('📋 Buffer créé:', buffer.length, 'bytes');
+    } catch (error) {
+      console.error('❌ Erreur création buffer:', error);
+      throw new Error('Impossible de lire le fichier');
+    }
 
     // Upload vers Cloudinary avec timeout
     console.log('⚡ Début upload vers Cloudinary...');
     const uploadResult = await Promise.race([
       new Promise((resolve, reject) => {
-        // Configuration d'upload
+        // Configuration simplifiée pour éviter les erreurs
         const uploadOptions: any = {
-          resource_type: 'auto', // Cloudinary détecte automatiquement
+          resource_type: isVideo ? 'video' : 'image',
           folder: isVideo ? 'boutique_videos' : 'boutique_images',
           public_id: `upload_${Date.now()}`,
           overwrite: true
         };
 
-        // Ajouter optimisations seulement pour images
+        // Ajouter optimisations seulement si nécessaire
         if (!isVideo) {
           uploadOptions.quality = 'auto';
           uploadOptions.width = 800;
@@ -80,38 +87,36 @@ export async function POST(request: NextRequest) {
 
         console.log('☁️ Options upload:', uploadOptions);
 
-        // MÉTHODE DIRECTE: Upload depuis le stream du fichier
-        const uploadFromBuffer = async () => {
-          try {
-            // Lire le fichier une seule fois
-            const arrayBuffer = await file.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            console.log('📋 Buffer créé:', buffer.length, 'bytes');
-
-            // Upload vers Cloudinary
-            const uploadStream = cloudinary.uploader.upload_stream(
-              uploadOptions,
-              (error, result) => {
-                if (error) {
-                  console.error('❌ Erreur Cloudinary:', error);
-                  reject(error);
-                } else {
-                  console.log('✅ Upload réussi:', result?.public_id);
-                  resolve(result);
-                }
-              }
-            );
-
-            // Envoyer le buffer
-            uploadStream.end(buffer);
-
-          } catch (error) {
-            console.error('❌ Erreur buffer:', error);
-            reject(new Error('Erreur lecture fichier'));
+        const uploadStream = cloudinary.uploader.upload_stream(
+          uploadOptions,
+          (error, result) => {
+            if (error) {
+              console.error('❌ Erreur Cloudinary détaillée:', {
+                message: error.message,
+                http_code: error.http_code,
+                name: error.name,
+                error: error
+              });
+              reject(error);
+            } else {
+              console.log('✅ Upload Cloudinary réussi:', {
+                public_id: result?.public_id,
+                url: result?.secure_url,
+                format: result?.format,
+                bytes: result?.bytes
+              });
+              resolve(result);
+            }
           }
-        };
+        );
 
-        uploadFromBuffer();
+        if (!uploadStream) {
+          console.error('❌ Impossible de créer le stream upload');
+          reject(new Error('Upload stream creation failed'));
+          return;
+        }
+
+        uploadStream.end(buffer);
       }),
     // Timeout de 4.5 minutes (moins que maxDuration)
     new Promise((_, reject) => 
