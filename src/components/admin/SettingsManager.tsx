@@ -162,7 +162,6 @@ export default function SettingsManager() {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Titre de la boutique caché - on utilise le logo maintenant
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Nom de la boutique
@@ -175,7 +174,6 @@ export default function SettingsManager() {
                 placeholder="CaliGaz"
               />
             </div>
-            */}
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
