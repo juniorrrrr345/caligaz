@@ -7,6 +7,11 @@ const CategorySchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  slug: {
+    type: String,
+    required: true,
+    trim: true
+  },
   emoji: {
     type: String,
     default: ''
@@ -29,6 +34,17 @@ const CategorySchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+});
+
+// Générer automatiquement le slug avant de sauvegarder
+CategorySchema.pre('save', function(next) {
+  if (this.name && (!this.slug || this.isModified('name'))) {
+    this.slug = this.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+  next();
 });
 
 export default mongoose.models.Category || mongoose.model('Category', CategorySchema);
