@@ -48,17 +48,50 @@ export async function POST(request: Request) {
     await connectDB();
     const data = await request.json();
     
-    console.log('📝 Création catégorie - Données reçues:', data);
-    console.log('📝 Menu spécifié:', data.menu);
+    console.log('📝 Création catégorie - Données reçues:', JSON.stringify(data, null, 2));
+    
+    // Valider les champs requis
+    if (!data.name || !data.menu) {
+      return NextResponse.json({ 
+        error: 'Champs requis manquants',
+        details: 'name et menu sont obligatoires' 
+      }, { status: 400 });
+    }
+    
+    // Générer le slug si manquant
+    if (!data.slug) {
+      data.slug = data.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
     
     const category = new Category(data);
     await category.save();
     
-    console.log('✅ Catégorie créée:', { name: category.name, menu: category.menu });
+    console.log('✅ Catégorie créée avec succès:', { 
+      id: category._id,
+      name: category.name, 
+      menu: category.menu,
+      slug: category.slug 
+    });
     
     return NextResponse.json(category, { status: 201 });
-  } catch (error) {
-    console.error('Error creating category:', error);
-    return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
+  } catch (error: any) {
+    console.error('❌ Erreur création catégorie:', error);
+    
+    // Gestion spécifique des erreurs de duplication
+    if (error.code === 11000) {
+      return NextResponse.json({ 
+        error: 'Catégorie déjà existante',
+        details: `Une catégorie avec ce slug existe déjà pour ce menu`,
+        duplicateKey: error.keyValue
+      }, { status: 409 });
+    }
+    
+    return NextResponse.json({ 
+      error: 'Erreur lors de la création',
+      details: error.message || 'Erreur inconnue'
+    }, { status: 500 });
   }
 }

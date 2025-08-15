@@ -48,17 +48,50 @@ export async function POST(request: Request) {
     await connectDB();
     const data = await request.json();
     
-    console.log('📝 Création farm - Données reçues:', data);
-    console.log('📝 Menu spécifié:', data.menu);
+    console.log('📝 Création farm - Données reçues:', JSON.stringify(data, null, 2));
+    
+    // Valider les champs requis
+    if (!data.name || !data.menu) {
+      return NextResponse.json({ 
+        error: 'Champs requis manquants',
+        details: 'name et menu sont obligatoires' 
+      }, { status: 400 });
+    }
+    
+    // Générer le slug si manquant
+    if (!data.slug) {
+      data.slug = data.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
     
     const farm = new Farm(data);
     await farm.save();
     
-    console.log('✅ Farm créée:', { name: farm.name, menu: farm.menu });
+    console.log('✅ Farm créée avec succès:', { 
+      id: farm._id,
+      name: farm.name, 
+      menu: farm.menu,
+      slug: farm.slug 
+    });
     
     return NextResponse.json(farm, { status: 201 });
-  } catch (error) {
-    console.error('Error creating farm:', error);
-    return NextResponse.json({ error: 'Failed to create farm' }, { status: 500 });
+  } catch (error: any) {
+    console.error('❌ Erreur création farm:', error);
+    
+    // Gestion spécifique des erreurs de duplication
+    if (error.code === 11000) {
+      return NextResponse.json({ 
+        error: 'Farm déjà existante',
+        details: `Une farm avec ce slug existe déjà pour ce menu`,
+        duplicateKey: error.keyValue
+      }, { status: 409 });
+    }
+    
+    return NextResponse.json({ 
+      error: 'Erreur lors de la création',
+      details: error.message || 'Erreur inconnue'
+    }, { status: 500 });
   }
 }
