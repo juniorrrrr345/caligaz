@@ -227,7 +227,7 @@ export default function SettingsManager() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Lien WhatsApp principal
+                Lien @Telegram principal
               </label>
               <input
                 type="url"
@@ -241,7 +241,7 @@ export default function SettingsManager() {
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Numéro WhatsApp (pour les commandes)
+                @Telegram (pour les commandes)
               </label>
               <input
                 type="text"

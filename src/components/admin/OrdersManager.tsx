@@ -71,13 +71,13 @@ export default function OrdersManager() {
       {/* Configuration du lien WhatsApp - responsive */}
       <div className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-white/10">
         <h2 className="text-base sm:text-lg font-semibold text-white mb-4">
-          Lien WhatsApp pour commander
+          Lien @Telegram pour commander
         </h2>
         
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Lien WhatsApp
+              Lien @Telegram
             </label>
             
             {editingLink ? (
@@ -123,7 +123,7 @@ export default function OrdersManager() {
             
             <div className="mt-3 space-y-1">
               <p className="text-xs sm:text-sm text-gray-400">
-                Ce lien sera utilisé dans les boutons "Commander via WhatsApp"
+                Ce lien sera utilisé dans les boutons "Commander via @Telegram"
               </p>
               <p className="text-xs text-gray-500">
                 Format: https://wa.me/[code pays][numéro]
