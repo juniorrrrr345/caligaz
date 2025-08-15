@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import ProductsManager from './ProductsManager';
+import CategoriesManager from './CategoriesManager';
+import FarmsManager from './FarmsManager';
 import MenusManager from './MenusManager';
 import SocialLinksManager from './SocialLinksManager';
 import SettingsManager from './SettingsManager';
@@ -12,7 +14,7 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type SectionType = 'products' | 'menus' | 'settings' | 'socialLinks' | 'pages';
+type SectionType = 'products' | 'categories' | 'farms' | 'menus' | 'settings' | 'socialLinks' | 'pages';
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [activeSection, setActiveSection] = useState<SectionType>('products');
@@ -45,6 +47,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   const menuItems = [
     { id: 'products' as SectionType, label: 'Produits', icon: '🛍️' },
+    { id: 'categories' as SectionType, label: 'Catégories', icon: '🏷️' },
+    { id: 'farms' as SectionType, label: 'Farms', icon: '🏭' },
     { id: 'menus' as SectionType, label: 'Menus', icon: '📋' },
     { id: 'settings' as SectionType, label: 'Paramètres', icon: '⚙️' },
     { id: 'socialLinks' as SectionType, label: 'Réseaux sociaux', icon: '🔗' },
@@ -55,6 +59,10 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     switch (activeSection) {
       case 'products':
         return <ProductsManager />;
+      case 'categories':
+        return <CategoriesManager />;
+      case 'farms':
+        return <FarmsManager />;
       case 'menus':
         return <MenusManager />;
       case 'settings':
