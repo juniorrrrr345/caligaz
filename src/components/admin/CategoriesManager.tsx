@@ -220,10 +220,6 @@ export default function CategoriesManager() {
                       </span>
                     </div>
                   
-                    {category.description && (
-                      <p className="text-gray-400 text-sm mb-4">{category.description}</p>
-                    )}
-                  
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleEdit(category)}
@@ -256,10 +252,6 @@ export default function CategoriesManager() {
                     {category.isActive ? 'Actif' : 'Inactif'}
                   </span>
                 </div>
-              
-                {category.description && (
-                  <p className="text-gray-400 text-sm mb-4">{category.description}</p>
-                )}
               
                 <div className="flex space-x-2">
                   <button
@@ -314,16 +306,6 @@ export default function CategoriesManager() {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                <textarea
-                  value={formData.description || ''}
-                  onChange={(e) => updateFormField('description', e.target.value)}
-                  className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2 h-20"
-                  placeholder="Description de la catégorie..."
-                />
               </div>
             </div>
 
