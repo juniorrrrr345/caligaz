@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, RotateCw } from 'lucide-react';
 
 interface Category {
   _id?: string;
@@ -49,6 +49,11 @@ export default function CategoriesManager() {
     }
   };
 
+  // Fonction pour recharger complètement la page
+  const hardRefresh = () => {
+    window.location.reload();
+  };
+
   // Charger au montage
   useEffect(() => {
     forceRefresh();
@@ -59,15 +64,14 @@ export default function CategoriesManager() {
     
     try {
       const response = await fetch(`/api/categories/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        cache: 'no-store'
       });
       
       if (response.ok) {
-        // Supprimer immédiatement de l'interface
-        setCategories(prev => prev.filter(c => c._id !== id));
-        
-        // Puis recharger depuis la DB après 1 seconde
-        setTimeout(() => forceRefresh(), 1000);
+        // Recharger immédiatement
+        await forceRefresh();
+        alert('✅ Catégorie supprimée avec succès!');
       }
     } catch (error) {
       console.error('Erreur:', error);
@@ -92,12 +96,14 @@ export default function CategoriesManager() {
           slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           order: 0,
           isActive: true
-        })
+        }),
+        cache: 'no-store'
       });
       
       if (response.ok) {
         // Recharger immédiatement
         await forceRefresh();
+        alert('✅ Catégorie créée avec succès!');
       } else {
         const error = await response.json();
         alert(`Erreur: ${error.details || error.error}`);
@@ -124,6 +130,14 @@ export default function CategoriesManager() {
             Rafraîchir
           </button>
           <button
+            onClick={hardRefresh}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded flex items-center gap-2"
+            title="Recharger complètement la page"
+          >
+            <RotateCw className="w-4 h-4" />
+            Recharger page
+          </button>
+          <button
             onClick={handleCreate}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center gap-2"
           >
@@ -141,7 +155,8 @@ export default function CategoriesManager() {
 
       {!loading && categories.length === 0 && (
         <div className="text-center text-gray-400 py-8">
-          Aucune catégorie
+          Aucune catégorie. Les catégories sont bien dans MongoDB mais ne s'affichent pas ? 
+          <br />Cliquez sur "Recharger page" ci-dessus.
         </div>
       )}
 
@@ -161,6 +176,18 @@ export default function CategoriesManager() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-8 p-4 bg-yellow-900/20 border border-yellow-600/50 rounded-lg">
+        <h3 className="text-yellow-400 font-bold mb-2">🔍 Debug Info:</h3>
+        <p className="text-yellow-300 text-sm">
+          Si les catégories ne s'affichent pas mais sont dans MongoDB:
+        </p>
+        <ul className="text-yellow-200 text-sm mt-2 list-disc list-inside">
+          <li>Cliquez sur "Rafraîchir" pour recharger les données</li>
+          <li>Cliquez sur "Recharger page" pour un rechargement complet</li>
+          <li>Vérifiez la console du navigateur (F12) pour les erreurs</li>
+        </ul>
       </div>
     </div>
   );

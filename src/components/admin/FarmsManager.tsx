@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, RotateCw } from 'lucide-react';
 
 interface Farm {
   _id?: string;
@@ -49,6 +49,11 @@ export default function FarmsManager() {
     }
   };
 
+  // Fonction pour recharger complètement la page
+  const hardRefresh = () => {
+    window.location.reload();
+  };
+
   // Charger au montage
   useEffect(() => {
     forceRefresh();
@@ -59,15 +64,14 @@ export default function FarmsManager() {
     
     try {
       const response = await fetch(`/api/farms/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        cache: 'no-store'
       });
       
       if (response.ok) {
-        // Supprimer immédiatement de l'interface
-        setFarms(prev => prev.filter(f => f._id !== id));
-        
-        // Puis recharger depuis la DB après 1 seconde
-        setTimeout(() => forceRefresh(), 1000);
+        // Recharger immédiatement
+        await forceRefresh();
+        alert('✅ Farm supprimée avec succès!');
       }
     } catch (error) {
       console.error('Erreur:', error);
@@ -92,12 +96,14 @@ export default function FarmsManager() {
           slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           order: 0,
           isActive: true
-        })
+        }),
+        cache: 'no-store'
       });
       
       if (response.ok) {
         // Recharger immédiatement
         await forceRefresh();
+        alert('✅ Farm créée avec succès!');
       } else {
         const error = await response.json();
         alert(`Erreur: ${error.details || error.error}`);
@@ -122,6 +128,14 @@ export default function FarmsManager() {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Rafraîchir
+          </button>
+          <button
+            onClick={hardRefresh}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded flex items-center gap-2"
+            title="Recharger complètement la page"
+          >
+            <RotateCw className="w-4 h-4" />
+            Recharger page
           </button>
           <button
             onClick={handleCreate}

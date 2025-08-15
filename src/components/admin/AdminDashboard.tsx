@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ProductsManager from './ProductsManager';
 import CategoriesManager from './CategoriesManager';
 import FarmsManager from './FarmsManager';
@@ -7,6 +7,8 @@ import MenusManager from './MenusManager';
 import SocialLinksManager from './SocialLinksManager';
 import SettingsManager from './SettingsManager';
 import PagesManager from './PagesManager';
+import { appEvents } from '@/lib/appEvents';
+import { EVENTS } from '@/lib/events';
 
 
 interface AdminDashboardProps {
@@ -18,6 +20,31 @@ type SectionType = 'products' | 'menus' | 'categories' | 'farms' | 'settings' | 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [activeSection, setActiveSection] = useState<SectionType>('products');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Fonction pour forcer le rechargement de tout le dashboard
+  const forceFullRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
+  // Écouter les événements de mise à jour
+  useEffect(() => {
+    const handleUpdate = () => {
+      console.log('🔄 Mise à jour détectée - Rechargement du dashboard');
+      forceFullRefresh();
+    };
+
+    // S'abonner aux événements
+    appEvents.on(EVENTS.CATEGORIES_UPDATED, handleUpdate);
+    appEvents.on(EVENTS.FARMS_UPDATED, handleUpdate);
+    appEvents.on(EVENTS.PRODUCTS_UPDATED, handleUpdate);
+
+    return () => {
+      appEvents.off(EVENTS.CATEGORIES_UPDATED, handleUpdate);
+      appEvents.off(EVENTS.FARMS_UPDATED, handleUpdate);
+      appEvents.off(EVENTS.PRODUCTS_UPDATED, handleUpdate);
+    };
+  }, []);
 
   const menuItems = [
     { id: 'products' as SectionType, label: 'Produits', icon: '🛍️' },
@@ -51,7 +78,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div key={refreshKey} className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Desktop: Sidebar + Content */}
       <div className="hidden lg:flex">
         {/* Sidebar Desktop avec style ÎLE DE FRANCE FULL OPTION */}
