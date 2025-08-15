@@ -81,7 +81,6 @@ export default function CategoriesManager() {
     setEditingCategory(null);
     setFormData({
       name: '',
-      description: '',
       menu: 'principal',
       emoji: '',
       isActive: true,
