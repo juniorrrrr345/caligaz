@@ -26,6 +26,8 @@ const defaultPriceKeys = ['3g', '5g', '10g', '25g', '50g', '100g', '200g', '500g
 
 export default function ProductsManager() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [allCategories, setAllCategories] = useState<{name: string, menu: string}[]>([]);
+  const [allFarms, setAllFarms] = useState<{name: string, menu: string}[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [farms, setFarms] = useState<string[]>([]);
   const [availableMenus, setAvailableMenus] = useState<MenuConfig[]>([]);
@@ -86,29 +88,33 @@ export default function ProductsManager() {
         setProducts([]); // Fallback to empty array
       }
 
-      // Charger les catégories
-      console.log('🏷️ Chargement des catégories...');
-      const categoriesRes = await fetch('/api/categories');
+      // Charger toutes les catégories
+      console.log('🏷️ Chargement de toutes les catégories...');
+      const categoriesRes = await fetch('/api/categories/all');
       console.log('🏷️ Réponse catégories:', categoriesRes.status);
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
         console.log('🏷️ Catégories chargées:', categoriesData.length, categoriesData);
+        setAllCategories(categoriesData);
         setCategories(categoriesData.map((c: { name: string }) => c.name));
       } else {
         console.error('❌ Erreur catégories:', categoriesRes.status);
+        setAllCategories([]);
         setCategories([]);
       }
 
-      // Charger les farms
-      console.log('🏭 Chargement des farms...');
-      const farmsRes = await fetch('/api/farms');
+      // Charger toutes les farms
+      console.log('🏭 Chargement de toutes les farms...');
+      const farmsRes = await fetch('/api/farms/all');
       console.log('🏭 Réponse farms:', farmsRes.status);
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
         console.log('🏭 Farms chargées:', farmsData.length, farmsData);
+        setAllFarms(farmsData);
         setFarms(farmsData.map((f: { name: string }) => f.name));
       } else {
         console.error('❌ Erreur farms:', farmsRes.status);
+        setAllFarms([]);
         setFarms([]);
       }
 
