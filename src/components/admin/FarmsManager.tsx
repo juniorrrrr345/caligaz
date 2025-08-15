@@ -16,7 +16,7 @@ export default function FarmsManager() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
-  const [selectedMenuFilter, setSelectedMenuFilter] = useState<MenuType | 'all'>('all');
+
   const [availableMenus, setAvailableMenus] = useState<MenuConfig[]>([]);
   const [formData, setFormData] = useState<Partial<Farm>>({
     name: '',
@@ -47,13 +47,7 @@ export default function FarmsManager() {
       setLoading(true);
       console.log('🏭 Admin: Chargement des farms...');
       
-      // Construire l'URL avec le filtre de menu si nécessaire
-      let url = '/api/farms/all';
-      if (selectedMenuFilter !== 'all') {
-        url += `?menu=${selectedMenuFilter}`;
-      }
-      
-      const response = await fetch(url, {
+      const response = await fetch('/api/farms/all', {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -76,11 +70,6 @@ export default function FarmsManager() {
       setLoading(false);
     }
   };
-
-  // Recharger quand le filtre de menu change
-  useEffect(() => {
-    loadFarms();
-  }, [selectedMenuFilter]);
 
   const handleEdit = (farm: Farm) => {
     setEditingFarm(farm);
@@ -179,28 +168,12 @@ export default function FarmsManager() {
           <p className="text-gray-400">({farms.length} au total)</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Filtre par menu */}
-          <select
-            value={selectedMenuFilter}
-            onChange={(e) => setSelectedMenuFilter(e.target.value as MenuType | 'all')}
-            className="bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
-          >
-            <option value="all">Tous les menus</option>
-            {availableMenus.map((menu) => (
-              <option key={menu.type} value={menu.type}>
-                {menu.displayName}
-              </option>
-            ))}
-          </select>
-          
-          <button
-            onClick={handleAdd}
-            className="bg-white hover:bg-gray-100 text-black font-bold py-2 px-4 rounded-lg whitespace-nowrap"
-          >
-            ➕ Nouvelle Farm
-          </button>
-        </div>
+        <button
+          onClick={handleAdd}
+          className="bg-white hover:bg-gray-100 text-black font-bold py-2 px-4 rounded-lg whitespace-nowrap"
+        >
+          ➕ Nouvelle Farm
+        </button>
       </div>
 
       {/* Affichage par menu */}
@@ -325,27 +298,6 @@ export default function FarmsManager() {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Pays</label>
-                <input
-                  type="text"
-                  value={formData.country || ''}
-                  onChange={(e) => updateFormField('country', e.target.value)}
-                  className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
-                  placeholder="Ex: France"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                <textarea
-                  value={formData.description || ''}
-                  onChange={(e) => updateFormField('description', e.target.value)}
-                  className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2 h-20"
-                  placeholder="Description de la farm..."
-                />
               </div>
             </div>
 

@@ -15,7 +15,7 @@ export default function CategoriesManager() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [selectedMenuFilter, setSelectedMenuFilter] = useState<MenuType | 'all'>('all');
+
   const [availableMenus, setAvailableMenus] = useState<MenuConfig[]>([]);
   const [formData, setFormData] = useState<Partial<Category>>({
     name: '',
@@ -45,13 +45,7 @@ export default function CategoriesManager() {
       setLoading(true);
       console.log('🏷️ Admin: Chargement des catégories...');
       
-      // Construire l'URL avec le filtre de menu si nécessaire
-      let url = '/api/categories/all';
-      if (selectedMenuFilter !== 'all') {
-        url += `?menu=${selectedMenuFilter}`;
-      }
-      
-      const response = await fetch(url, {
+      const response = await fetch('/api/categories/all', {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -74,11 +68,6 @@ export default function CategoriesManager() {
       setLoading(false);
     }
   };
-
-  // Recharger quand le filtre de menu change
-  useEffect(() => {
-    loadCategories();
-  }, [selectedMenuFilter]);
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
@@ -176,102 +165,52 @@ export default function CategoriesManager() {
           <p className="text-gray-400">({categories.length} au total)</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Filtre par menu */}
-          <select
-            value={selectedMenuFilter}
-            onChange={(e) => setSelectedMenuFilter(e.target.value as MenuType | 'all')}
-            className="bg-gray-800 border border-white/20 text-white rounded-lg px-3 py-2"
-          >
-            <option value="all">Tous les menus</option>
-            {availableMenus.map((menu) => (
-              <option key={menu.type} value={menu.type}>
-                {menu.displayName}
-              </option>
-            ))}
-          </select>
-          
-          <button
-            onClick={handleAdd}
-            className="bg-white hover:bg-gray-100 text-black font-bold py-2 px-4 rounded-lg whitespace-nowrap"
-          >
-            ➕ Nouvelle Catégorie
-          </button>
-        </div>
+        <button
+          onClick={handleAdd}
+          className="bg-white hover:bg-gray-100 text-black font-bold py-2 px-4 rounded-lg whitespace-nowrap"
+        >
+          ➕ Nouvelle Catégorie
+        </button>
       </div>
 
-      {/* Affichage par menu */}
-      {selectedMenuFilter === 'all' ? (
-        // Vue groupée par menu
-        <div className="space-y-8">
-          {Object.entries(categoriesByMenu).map(([menuType, menuCategories]) => (
-            <div key={menuType}>
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                {menuType === 'principal' ? '⛽' : '🇪🇸'} {getMenuDisplayName(menuType as MenuType)}
-                <span className="text-sm text-gray-400">({menuCategories.length} catégories)</span>
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                {menuCategories.map((category) => (
-                  <div key={category._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="font-bold text-white text-xl">{category.name}</h3>
-                      <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                        {category.isActive ? 'Actif' : 'Inactif'}
-                      </span>
-                    </div>
-                  
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEdit(category)}
-                        className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
-                      >
-                        ✏️ Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDelete(category._id!)}
-                        className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+      {/* Affichage groupé par menu */}
+      <div className="space-y-8">
+        {Object.entries(categoriesByMenu).map(([menuType, menuCategories]) => (
+          <div key={menuType}>
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              {menuType === 'principal' ? '⛽' : '🇪🇸'} {getMenuDisplayName(menuType as MenuType)}
+              <span className="text-sm text-gray-400">({menuCategories.length} catégories)</span>
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              {menuCategories.map((category) => (
+                <div key={category._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <h3 className="font-bold text-white text-xl">{category.name}</h3>
+                    <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                      {category.isActive ? 'Actif' : 'Inactif'}
+                    </span>
                   </div>
-                ))}
-              </div>
+                
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(category)}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
+                    >
+                      ✏️ Modifier
+                    </button>
+                    <button
+                      onClick={() => handleDelete(category._id!)}
+                      className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      ) : (
-        // Vue filtrée
-        <div className="max-h-[70vh] overflow-y-auto pr-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {categories.map((category) => (
-              <div key={category._id} className="bg-gray-900 border border-white/20 rounded-xl p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="font-bold text-white text-xl">{category.name}</h3>
-                  <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                    {category.isActive ? 'Actif' : 'Inactif'}
-                  </span>
-                </div>
-              
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleEdit(category)}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm"
-                  >
-                    ✏️ Modifier
-                  </button>
-                  <button
-                    onClick={() => handleDelete(category._id!)}
-                    className="bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded text-sm"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            ))}
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Modal d'édition */}
       {showModal && (
