@@ -38,48 +38,16 @@ export async function POST(request: Request) {
     await connectDB();
     const data = await request.json();
     
-    console.log('📥 Création catégorie avec données:', data);
-    
-    // Valider que le nom n'est pas vide
-    if (!data.name || !data.name.trim()) {
-      return NextResponse.json({ error: 'Le nom de la catégorie est requis' }, { status: 400 });
-    }
-    
     // Valider que le menu est correct
     if (!data.menu || !['principal', 'barcelone'].includes(data.menu)) {
       data.menu = 'principal'; // Valeur par défaut
     }
     
-    // S'assurer que tous les champs sont présents
-    const categoryData = {
-      name: data.name.trim(),
-      emoji: data.emoji || '',
-      menu: data.menu,
-      isActive: data.isActive !== false,
-      order: data.order || 0
-    };
-    
-    console.log('💾 Sauvegarde catégorie:', categoryData);
-    
-    const category = new Category(categoryData);
+    const category = new Category(data);
     await category.save();
-    
-    console.log('✅ Catégorie créée:', category);
     return NextResponse.json(category, { status: 201 });
   } catch (error) {
-    console.error('❌ Erreur création catégorie:', error);
-    
-    // Gérer les erreurs de duplication
-    if (error.code === 11000) {
-      return NextResponse.json({ 
-        error: 'Une catégorie avec ce nom existe déjà',
-        details: 'Nom en double'
-      }, { status: 409 });
-    }
-    
-    return NextResponse.json({ 
-      error: 'Erreur lors de la création de la catégorie',
-      details: error.message 
-    }, { status: 500 });
+    console.error('Error creating category:', error);
+    return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
   }
 }

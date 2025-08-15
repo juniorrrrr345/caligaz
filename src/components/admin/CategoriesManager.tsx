@@ -95,27 +95,16 @@ export default function CategoriesManager() {
 
   const handleSave = async () => {
     try {
-      console.log('💾 Admin: Sauvegarde catégorie...', formData);
+      console.log('💾 Admin: Sauvegarde catégorie...');
       const method = editingCategory ? 'PUT' : 'POST';
       const url = editingCategory ? `/api/categories/${editingCategory._id}` : '/api/categories';
-      
-      // S'assurer que tous les champs nécessaires sont présents
-      const dataToSend = {
-        ...formData,
-        name: formData.name?.trim(),
-        emoji: formData.emoji || '',
-        isActive: formData.isActive !== false,
-        order: formData.order || 0
-      };
-      
-      console.log('📤 Données envoyées:', dataToSend);
       
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(dataToSend),
+        body: JSON.stringify(formData),
       });
 
       if (response.ok) {
@@ -123,9 +112,7 @@ export default function CategoriesManager() {
         setShowModal(false);
         await loadCategories(); // Recharger les données
       } else {
-        const errorData = await response.text();
-        console.error('❌ Admin: Erreur sauvegarde:', response.status, errorData);
-        alert(`Erreur lors de la sauvegarde: ${response.status} - ${errorData}`);
+        console.error('❌ Admin: Erreur sauvegarde:', response.status);
       }
     } catch (error) {
       console.error('❌ Admin: Erreur lors de la sauvegarde:', error);
