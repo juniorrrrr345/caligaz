@@ -41,6 +41,7 @@ export default function CategoriesManager() {
     try {
       setLoading(true);
       console.log('🔄 CategoriesManager - Début du chargement complet...');
+      console.log('  - État actuel des catégories AVANT:', categories.length);
       
       // 1. Charger les menus
       console.log('📋 Chargement des menus...');
@@ -58,12 +59,15 @@ export default function CategoriesManager() {
       // 2. Charger TOUTES les catégories avec timestamp pour éviter le cache
       console.log('🏷️ Chargement de toutes les catégories...');
       const timestamp = Date.now();
-      const categoriesRes = await fetch(`/api/categories/all?t=${timestamp}`);
+      const url = `/api/categories/all?t=${timestamp}`;
+      console.log('  - URL appelée:', url);
+      const categoriesRes = await fetch(url);
       console.log('🏷️ Réponse catégories:', categoriesRes.status);
       
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
         console.log('🏷️ Catégories reçues de l\'API:', categoriesData.length);
+        console.log('  - Données brutes:', JSON.stringify(categoriesData));
         categoriesData.forEach((cat: any) => {
           console.log(`  - ${cat.name} (Menu: ${cat.menu}, ID: ${cat._id})`);
         });
@@ -71,8 +75,11 @@ export default function CategoriesManager() {
         // IMPORTANT: Créer un nouveau tableau pour forcer React à re-render
         setCategories([...categoriesData]);
         console.log('✅ État categories mis à jour avec', categoriesData.length, 'éléments');
+        console.log('  - Vérification après setCategories:', categories.length);
       } else {
         console.error('❌ Erreur catégories:', categoriesRes.status);
+        const errorText = await categoriesRes.text();
+        console.error('  - Erreur détaillée:', errorText);
         setCategories([]);
       }
       
@@ -84,6 +91,7 @@ export default function CategoriesManager() {
     } finally {
       setLoading(false);
       console.log('🏁 Loading mis à false');
+      console.log('  - État final des catégories:', categories.length);
     }
   };
 
@@ -245,6 +253,13 @@ export default function CategoriesManager() {
     acc[menuSlug].push(category);
     return acc;
   }, {} as Record<string, Category[]>);
+
+  // DEBUG: Afficher l'état actuel
+  console.log('🔍 DEBUG CategoriesManager:');
+  console.log('  - Nombre total de catégories:', categories.length);
+  console.log('  - Catégories par menu:', Object.keys(categoriesByMenu).map(menu => `${menu}: ${categoriesByMenu[menu].length}`));
+  console.log('  - État loading:', loading);
+  console.log('  - Catégories détaillées:', categories);
 
   if (loading) {
     return (

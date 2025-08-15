@@ -40,6 +40,7 @@ export default function FarmsManager() {
     try {
       setLoading(true);
       console.log('🔄 FarmsManager - Chargement des données...');
+      console.log('  - État actuel des farms AVANT:', farms.length);
       
       // Charger les menus
       const menusRes = await fetch('/api/menus');
@@ -50,12 +51,21 @@ export default function FarmsManager() {
 
       // Charger TOUTES les farms
       const timestamp = Date.now();
-      const farmsRes = await fetch(`/api/farms/all?t=${timestamp}`);
+      const url = `/api/farms/all?t=${timestamp}`;
+      console.log('  - URL appelée:', url);
+      const farmsRes = await fetch(url);
+      console.log('🏭 Réponse farms:', farmsRes.status);
+      
       if (farmsRes.ok) {
         const farmsData = await farmsRes.json();
-        console.log('🏭 Farms chargées:', farmsData.length);
+        console.log('🏭 Farms reçues de l\'API:', farmsData.length);
+        console.log('  - Données brutes:', JSON.stringify(farmsData));
         setFarms(farmsData);
+        console.log('✅ État farms mis à jour avec', farmsData.length, 'éléments');
       } else {
+        console.error('❌ Erreur farms:', farmsRes.status);
+        const errorText = await farmsRes.text();
+        console.error('  - Erreur détaillée:', errorText);
         setFarms([]);
       }
     } catch (error) {
@@ -64,6 +74,8 @@ export default function FarmsManager() {
       setMenus([]);
     } finally {
       setLoading(false);
+      console.log('🏁 Loading mis à false');
+      console.log('  - État final des farms:', farms.length);
     }
   };
 
