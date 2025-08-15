@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import MediaUploader from './MediaUploader';
 import CloudinaryUploader from './CloudinaryUploader';
+import { MenuType, MenuConfig } from '@/types';
 
 interface Product {
   _id?: string;
   name: string;
   farm: string;
   category: string;
+  menu: MenuType;
   image: string;
   video?: string;
   prices: {
@@ -26,6 +28,7 @@ export default function ProductsManager() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [farms, setFarms] = useState<string[]>([]);
+  const [availableMenus, setAvailableMenus] = useState<MenuConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -33,6 +36,7 @@ export default function ProductsManager() {
     name: '',
     farm: '',
     category: '',
+    menu: 'principal',
     image: '',
     video: '',
     prices: {},
@@ -99,6 +103,19 @@ export default function ProductsManager() {
         console.error('❌ Erreur farms:', farmsRes.status);
         setFarms([]);
       }
+
+      // Charger les menus
+      console.log('📋 Chargement des menus...');
+      const menusRes = await fetch('/api/menus');
+      console.log('📋 Réponse menus:', menusRes.status);
+      if (menusRes.ok) {
+        const menusData = await menusRes.json();
+        console.log('📋 Menus chargés:', menusData.length, menusData);
+        setAvailableMenus(menusData);
+      } else {
+        console.error('❌ Erreur menus:', menusRes.status);
+        setAvailableMenus([]);
+      }
       
       console.log('✅ Chargement terminé avec succès');
     } catch (error) {
@@ -158,6 +175,7 @@ export default function ProductsManager() {
       name: '',
       farm: '',
       category: '',
+      menu: 'principal',
       image: '',
       video: '',
       prices: {},
@@ -1017,6 +1035,21 @@ export default function ProductsManager() {
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Menu</label>
+                  <select
+                    value={formData.menu || ''}
+                    onChange={(e) => updateField('menu', e.target.value as MenuType)}
+                    className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  >
+                    {availableMenus.map((menu) => (
+                      <option key={menu.type} value={menu.type}>
+                        {menu.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Image du produit</label>
@@ -1288,6 +1321,21 @@ export default function ProductsManager() {
                         <option value="">Sélectionner une farm</option>
                         {farms.map((farm) => (
                           <option key={farm} value={farm}>{farm}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Menu</label>
+                      <select
+                        value={formData.menu || ''}
+                        onChange={(e) => updateField('menu', e.target.value as MenuType)}
+                        className="w-full bg-gray-800 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/50"
+                      >
+                        {availableMenus.map((menu) => (
+                          <option key={menu.type} value={menu.type}>
+                            {menu.displayName}
+                          </option>
                         ))}
                       </select>
                     </div>

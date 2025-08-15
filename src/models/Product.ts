@@ -16,6 +16,12 @@ const ProductSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  menu: {
+    type: String,
+    required: true,
+    enum: ['principal', 'barcelone'],
+    default: 'principal'
+  },
   image: {
     type: String,
     required: true
