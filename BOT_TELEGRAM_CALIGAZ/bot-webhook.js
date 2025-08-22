@@ -154,41 +154,34 @@ async function updateMessage(chatId, messageId, text, options = {}) {
 // Fonction pour envoyer le message d'accueil
 async function sendWelcomeMessage(chatId, editMessageId = null, userInfo = null) {
     try {
-        let personalizedMessage = config.welcomeMessage || 'Bienvenue !';
+        const welcomeMessage = `Bienvenue ! 👋
+📦 Tous nos produits sont disponibles juste en bas ⬇️
+Clique sur la mini-application pour découvrir notre catalogue complet ⛽️`;
         
-        if (userInfo) {
-            personalizedMessage = personalizedMessage
-                .replace(/{firstname}/gi, userInfo.first_name || '')
-                .replace(/{lastname}/gi, userInfo.last_name || '')
-                .replace(/{username}/gi, userInfo.username ? `@${userInfo.username}` : '')
-                .replace(/{fullname}/gi, `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim());
-        }
+        const keyboard = {
+            inline_keyboard: [
+                [{ text: '🛍 Boutique CaliGaz', web_app: { url: 'https://caligaz.vercel.app' } }],
+                [{ text: 'ℹ️ Informations', callback_data: 'info' }],
+                [
+                    { text: '📸 Instagram', url: 'https://instagram.com/caligaz' },
+                    { text: '💬 Telegram', url: 'https://t.me/caligaz' }
+                ],
+                [
+                    { text: '🥔 Potato', url: 'https://potato.im/caligaz' },
+                    { text: '📡 Signal', url: 'https://signal.me/#p/+33612345678' }
+                ]
+            ]
+        };
         
         const options = {
-            reply_markup: getMainKeyboard(config),
+            reply_markup: keyboard,
             parse_mode: 'HTML'
         };
 
-        if (config.welcomeImage) {
-            const imagePath = getImagePath(config.welcomeImage);
-            if (fs.existsSync(imagePath)) {
-                await sendNewPhoto(chatId, imagePath, {
-                    caption: personalizedMessage,
-                    ...options
-                });
-            } else {
-                if (editMessageId && activeMessages[chatId] === editMessageId) {
-                    await updateMessage(chatId, editMessageId, personalizedMessage, options);
-                } else {
-                    await sendNewMessage(chatId, personalizedMessage, options);
-                }
-            }
+        if (editMessageId && activeMessages[chatId] === editMessageId) {
+            await updateMessage(chatId, editMessageId, welcomeMessage, options);
         } else {
-            if (editMessageId && activeMessages[chatId] === editMessageId) {
-                await updateMessage(chatId, editMessageId, personalizedMessage, options);
-            } else {
-                await sendNewMessage(chatId, personalizedMessage, options);
-            }
+            await sendNewMessage(chatId, welcomeMessage, options);
         }
     } catch (error) {
         console.error('Erreur lors de l\'envoi du message d\'accueil:', error);
@@ -255,8 +248,35 @@ bot.onText(/\/admin/, async (msg) => {
         return;
     }
 
-    await sendNewMessage(chatId, '🔧 Menu Administrateur', {
-        reply_markup: getAdminKeyboard()
+    const adminMenu = `🔧 <b>Panel Admin CaliGaz ⛽️</b>
+
+👤 Admin: ${msg.from.first_name || 'Admin'}
+🆔 ID: ${userId}
+📅 Date: ${new Date().toLocaleDateString('fr-FR')}
+
+Sélectionnez une option:`;
+
+    await sendNewMessage(chatId, adminMenu, {
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: '📊 Statistiques', callback_data: 'admin_stats' },
+                    { text: '👥 Utilisateurs', callback_data: 'admin_users' }
+                ],
+                [
+                    { text: '📢 Broadcast', callback_data: 'admin_broadcast' },
+                    { text: '⚙️ Configuration', callback_data: 'admin_config' }
+                ],
+                [
+                    { text: '📦 Produits', callback_data: 'admin_products' },
+                    { text: '📋 Commandes', callback_data: 'admin_orders' }
+                ],
+                [
+                    { text: '❌ Fermer', callback_data: 'admin_close' }
+                ]
+            ]
+        }
     });
 });
 
@@ -280,6 +300,32 @@ bot.on('callback_query', async (callbackQuery) => {
     try {
         switch (data) {
             case 'info':
+                const infoText = `🏪 <b>CaliGaz ⛽️</b>
+
+📍 <b>Nos Points de Vente:</b>
+• Paris - Île-de-France
+• Barcelone - Espagne 🇪🇸
+
+⏰ <b>Horaires:</b>
+Lundi - Dimanche: 10h00 - 02h00
+
+📞 <b>Contact:</b>
+• Telegram: @caligaz
+• Instagram: @caligaz
+• Signal: +33 6 12 34 56 78
+
+💳 <b>Modes de paiement:</b>
+• Espèces
+• Crypto (BTC, ETH, USDT)
+• Virement
+
+🚚 <b>Livraison:</b>
+• Livraison rapide disponible
+• Minimum de commande: 100g
+
+✅ Qualité garantie
+🔒 Discrétion assurée`;
+
                 const infoOptions = {
                     parse_mode: 'HTML',
                     reply_markup: {
@@ -289,19 +335,7 @@ bot.on('callback_query', async (callbackQuery) => {
                     }
                 };
                 
-                if (config.welcomeImage) {
-                    const imagePath = getImagePath(config.welcomeImage);
-                    if (fs.existsSync(imagePath)) {
-                        await sendNewPhoto(chatId, imagePath, {
-                            caption: config.infoText,
-                            ...infoOptions
-                        });
-                    } else {
-                        await updateMessage(chatId, messageId, config.infoText, infoOptions);
-                    }
-                } else {
-                    await updateMessage(chatId, messageId, config.infoText, infoOptions);
-                }
+                await updateMessage(chatId, messageId, infoText, infoOptions);
                 break;
 
             case 'back_to_main':
