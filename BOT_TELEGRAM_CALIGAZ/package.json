@@ -1,22 +1,27 @@
 {
-  "name": "bot-telegram-caligaz",
+  "name": "telegram-bot-caligaz",
   "version": "1.0.0",
-  "description": "Bot Telegram pour Caligaz Shop",
-  "main": "bot.js",
+  "description": "Bot Telegram avec MongoDB pour CaliGaz",
+  "main": "bot-webhook.js",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "start": "node bot-webhook.js",
+    "webhook": "node bot-webhook.js",
+    "polling": "node bot.js",
+    "mongodb": "node bot-mongodb.js",
+    "dev": "nodemon bot-webhook.js",
+    "test": "node test-local.js"
   },
   "dependencies": {
-    "dotenv": "^16.4.5",
-    "express": "^4.21.2",
-    "mongoose": "^8.16.4",
-    "node-telegram-bot-api": "^0.66.0"
+    "node-telegram-bot-api": "^0.64.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "fs-extra": "^11.2.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=14.0.0"
   }
 }
