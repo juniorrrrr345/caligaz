@@ -239,19 +239,11 @@ async function sendWelcomeMessage(chatId, editMessageId = null, userInfo = null)
         };
 
         if (config.welcomeImage) {
-            const imagePath = getImagePath(config.welcomeImage);
-            if (fs.existsSync(imagePath)) {
-                await sendNewPhoto(chatId, imagePath, {
-                    caption: personalizedMessage,
-                    ...options
-                });
-            } else {
-                if (editMessageId && activeMessages[chatId] === editMessageId) {
-                    await updateMessage(chatId, editMessageId, personalizedMessage, options);
-                } else {
-                    await sendNewMessage(chatId, personalizedMessage, options);
-                }
-            }
+            // Si c'est un file_id Telegram, l'envoyer directement
+            await sendNewPhoto(chatId, config.welcomeImage, {
+                caption: personalizedMessage,
+                ...options
+            });
         } else {
             if (editMessageId && activeMessages[chatId] === editMessageId) {
                 await updateMessage(chatId, editMessageId, personalizedMessage, options);
@@ -508,15 +500,11 @@ bot.on('callback_query', async (callbackQuery) => {
                 };
                 
                 if (config.welcomeImage) {
-                    const imagePath = getImagePath(config.welcomeImage);
-                    if (fs.existsSync(imagePath)) {
-                        await sendNewPhoto(chatId, imagePath, {
-                            caption: config.infoText,
-                            ...infoOptions
-                        });
-                    } else {
-                        await updateMessage(chatId, messageId, config.infoText, infoOptions);
-                    }
+                    // Si c'est un file_id Telegram, l'envoyer directement
+                    await sendNewPhoto(chatId, config.welcomeImage, {
+                        caption: config.infoText,
+                        ...infoOptions
+                    });
                 } else {
                     await updateMessage(chatId, messageId, config.infoText, infoOptions);
                 }
@@ -1187,37 +1175,23 @@ bot.on('photo', async (msg) => {
         const photo = msg.photo[msg.photo.length - 1];
         const fileId = photo.file_id;
 
-        const file = await bot.getFile(fileId);
-        const filePath = file.file_path;
-        const downloadUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${filePath}`;
+        // Stocker directement le file_id Telegram (pas besoin de télécharger)
+        config.welcomeImage = fileId;
+        await saveConfig(config);
+        delete userStates[userId];
 
-        const fileName = `welcome_${Date.now()}.jpg`;
-        const localPath = path.join(IMAGES_DIR, fileName);
-
-        const https = require('https');
-        const fileStream = fs.createWriteStream(localPath);
-
-        https.get(downloadUrl, (response) => {
-            response.pipe(fileStream);
-            fileStream.on('finish', async () => {
-                fileStream.close();
-                
-                if (config.welcomeImage) {
-                    const oldPath = getImagePath(config.welcomeImage);
-                    if (fs.existsSync(oldPath)) {
-                        fs.unlinkSync(oldPath);
-                    }
-                }
-
-                config.welcomeImage = fileName;
-                saveConfig(config);
-                delete userStates[userId];
-
-                await updateMessage(chatId, userState.messageId, '✅ Photo d\'accueil mise à jour!', {
-                    reply_markup: getAdminKeyboard()
-                });
-            });
+        // Envoyer la confirmation avec la nouvelle photo
+        await bot.sendPhoto(chatId, fileId, {
+            caption: '✅ Photo d\'accueil mise à jour avec succès!',
+            reply_markup: getAdminKeyboard()
         });
+        
+        // Supprimer l'ancien message
+        try {
+            await bot.deleteMessage(chatId, userState.messageId);
+        } catch (error) {
+            // Message déjà supprimé ou erreur
+        }
     } catch (error) {
         console.error('Erreur lors du traitement de la photo:', error);
         await sendNewMessage(chatId, '❌ Une erreur s\'est produite lors du traitement de la photo.');
