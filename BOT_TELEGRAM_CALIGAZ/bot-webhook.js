@@ -466,7 +466,14 @@ bot.onText(/\/admin/, async (msg) => {
         return;
     }
 
-    await sendNewMessage(chatId, '🔧 Menu Administrateur', {
+    const adminMenu = `⛽ **Panel Admin CaliGaz**\n\n` +
+        `👤 Admin: ${msg.from.first_name || 'Admin'}\n` +
+        `🆔 ID: ${userId}\n` +
+        `📅 Date: ${new Date().toLocaleDateString('fr-FR')}\n\n` +
+        `Sélectionnez une option:`;
+
+    await sendNewMessage(chatId, adminMenu, {
+        parse_mode: 'Markdown',
         reply_markup: getAdminKeyboard()
     });
 });
@@ -746,6 +753,17 @@ bot.on('callback_query', async (callbackQuery) => {
                         ]
                     }
                 });
+                break;
+
+            case 'admin_close':
+                try {
+                    await bot.deleteMessage(chatId, messageId);
+                } catch (error) {
+                    // Si le message ne peut pas être supprimé, on l'édite
+                    await updateMessage(chatId, messageId, '✅ Panel admin fermé', {
+                        reply_markup: { inline_keyboard: [] }
+                    });
+                }
                 break;
 
             case 'admin_export_users':
