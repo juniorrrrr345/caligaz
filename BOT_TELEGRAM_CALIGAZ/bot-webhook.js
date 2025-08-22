@@ -22,17 +22,40 @@ if (!process.env.ADMIN_ID) {
 }
 
 // URL de votre app Render
-const WEBHOOK_URL = process.env.WEBHOOK_URL || `https://bottelegramplug.onrender.com`;
+const WEBHOOK_URL = process.env.WEBHOOK_URL || `https://caligaz-bot.onrender.com`;
 
 // Initialiser le bot en mode webhook
 const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: true });
 const ADMIN_ID = parseInt(process.env.ADMIN_ID);
+
+// Configuration du webhook au démarrage
+const setupWebhook = async () => {
+    try {
+        const webhookPath = `/bot${process.env.BOT_TOKEN}`;
+        const fullWebhookUrl = `${WEBHOOK_URL}${webhookPath}`;
+        
+        console.log('🔗 Configuration du webhook:', fullWebhookUrl);
+        
+        // Définir le webhook
+        await bot.setWebHook(fullWebhookUrl);
+        
+        // Vérifier le webhook
+        const webhookInfo = await bot.getWebHookInfo();
+        console.log('✅ Webhook configuré:', webhookInfo);
+    } catch (error) {
+        console.error('❌ Erreur lors de la configuration du webhook:', error);
+    }
+};
+
+// Appeler setupWebhook après le démarrage du serveur
+setTimeout(setupWebhook, 3000);
 
 // Middleware Express
 app.use(express.json());
 
 // Route pour le webhook Telegram
 app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
+    console.log('📨 Webhook reçu:', JSON.stringify(req.body, null, 2));
     bot.processUpdate(req.body);
     res.sendStatus(200);
 });
@@ -176,6 +199,7 @@ async function sendWelcomeMessage(chatId, editMessageId = null, userInfo = null)
 
 // Commande /start
 bot.onText(/\/start/, async (msg) => {
+    console.log('🚀 Commande /start reçue de:', msg.from.username || msg.from.id);
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     
@@ -183,7 +207,9 @@ bot.onText(/\/start/, async (msg) => {
     
     try {
         await bot.deleteMessage(chatId, msg.message_id);
-    } catch (error) {}
+    } catch (error) {
+        console.error('Erreur suppression message:', error.message);
+    }
     
     await sendWelcomeMessage(chatId, null, msg.from);
 });
