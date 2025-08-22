@@ -1,7 +1,7 @@
 {
-  "name": "telegram-bot-caligaz",
+  "name": "telegram-bot-reinafarm",
   "version": "1.0.0",
-  "description": "Bot Telegram avec MongoDB pour CaliGaz",
+  "description": "Bot Telegram avec MongoDB pour REINAFARM",
   "main": "bot-webhook.js",
   "scripts": {
     "start": "node bot-webhook.js",

@@ -3,7 +3,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const fs = require('fs-extra');
 const path = require('path');
-const { loadConfig, saveConfig, getImagePath, IMAGES_DIR } = require('./config');
+const { loadConfig, saveConfig, resetConfig, getImagePath, Config } = require('./config');
+const mongoose = require('mongoose');
 const { getMainKeyboard, getAdminKeyboard, getSocialManageKeyboard, getSocialLayoutKeyboard, getConfirmKeyboard } = require('./keyboards');
 
 // Configuration Express
@@ -28,17 +29,11 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL || `https://caligaz.onrender.com`;
 const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: true });
 const ADMIN_ID = parseInt(process.env.ADMIN_ID);
 
-console.log('🔧 Configuration du bot:');
-console.log('   Token:', process.env.BOT_TOKEN ? '✅ Défini' : '❌ Manquant');
-console.log('   Admin ID:', ADMIN_ID);
-console.log('   Webhook URL:', WEBHOOK_URL);
-
 // Middleware Express
 app.use(express.json());
 
 // Route pour le webhook Telegram
 app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
-    console.log('📨 Webhook reçu:', JSON.stringify(req.body, null, 2));
     bot.processUpdate(req.body);
     res.sendStatus(200);
 });
@@ -53,21 +48,43 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Route de test webhook
-app.get('/webhook-info', async (req, res) => {
+// Route de métriques pour monitoring
+app.get('/metrics', async (req, res) => {
     try {
         const webhookInfo = await bot.getWebHookInfo();
         res.json({
-            webhook_url: webhookInfo.url,
-            pending_update_count: webhookInfo.pending_update_count,
-            last_error_date: webhookInfo.last_error_date,
-            last_error_message: webhookInfo.last_error_message,
-            expected_url: `${WEBHOOK_URL}/bot${process.env.BOT_TOKEN}`
+            uptime: process.uptime(),
+            memory: process.memoryUsage(),
+            timestamp: new Date().toISOString(),
+            webhook: webhookInfo.url ? 'active' : 'inactive',
+            webhook_url: webhookInfo.url || null,
+            pending_updates: webhookInfo.pending_update_count || 0,
+            last_error: webhookInfo.last_error_date ? new Date(webhookInfo.last_error_date * 1000).toISOString() : null,
+            platform: 'Render',
+            mode: 'webhook',
+            users_count: users.size,
+            admins_count: admins.size
         });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: 'Failed to get metrics',
+            message: error.message
+        });
     }
 });
+
+// Schéma MongoDB pour les utilisateurs
+const userSchema = new mongoose.Schema({
+    userId: { type: Number, required: true, unique: true },
+    username: String,
+    firstName: String,
+    lastName: String,
+    isAdmin: { type: Boolean, default: false },
+    firstSeen: { type: Date, default: Date.now },
+    lastSeen: { type: Date, default: Date.now }
+});
+
+const User = mongoose.model('BotUser', userSchema);
 
 // État des utilisateurs (pour gérer les conversations)
 const userStates = {};
@@ -76,23 +93,75 @@ const activeMessages = {};
 // Stocker les utilisateurs qui ont interagi avec le bot
 const users = new Set();
 // Stocker les administrateurs
-const admins = new Set([ADMIN_ID]);
+let admins = new Set([ADMIN_ID]);
 
 // Temps de démarrage du bot
 const botStartTime = new Date();
 
-// Charger la configuration au démarrage
-let config = loadConfig();
+// Configuration globale
+let config = {};
 
-// Fonction pour sauvegarder un utilisateur
-async function saveUser(userId, userInfo) {
-    users.add(userId);
+// Initialiser les données au démarrage
+async function initializeData() {
+    try {
+        // Charger la configuration depuis MongoDB
+        config = await loadConfig();
+        console.log('✅ Configuration chargée depuis MongoDB');
+        
+        // Charger les utilisateurs depuis MongoDB
+        const dbUsers = await User.find();
+        dbUsers.forEach(user => {
+            users.add(user.userId);
+            if (user.isAdmin) {
+                admins.add(user.userId);
+            }
+        });
+        console.log(`✅ ${users.size} utilisateurs chargés`);
+        console.log(`✅ ${admins.size} administrateurs chargés`);
+    } catch (error) {
+        console.error('❌ Erreur initialisation:', error);
+        config = await loadConfig(); // Essayer de charger la config par défaut
+    }
 }
 
-// Fonction pour sauvegarder les admins
-function saveAdmins() {
-    // Dans cette version simplifiée, on garde les admins en mémoire
-    // Vous pouvez implémenter une sauvegarde persistante si nécessaire
+// Initialiser les données
+initializeData();
+
+// Fonction pour sauvegarder un utilisateur dans MongoDB
+async function saveUser(userId, userInfo = {}) {
+    try {
+        await User.findOneAndUpdate(
+            { userId },
+            {
+                userId,
+                username: userInfo.username,
+                firstName: userInfo.first_name,
+                lastName: userInfo.last_name,
+                lastSeen: new Date()
+            },
+            { upsert: true, new: true }
+        );
+        users.add(userId);
+    } catch (error) {
+        console.error('Erreur sauvegarde utilisateur:', error);
+    }
+}
+
+// Fonction pour sauvegarder les admins dans MongoDB
+async function saveAdminsData() {
+    try {
+        // Mettre à jour le statut admin des utilisateurs
+        for (const adminId of admins) {
+            await User.findOneAndUpdate(
+                { userId: adminId },
+                { isAdmin: true },
+                { upsert: true }
+            );
+        }
+        console.log('✅ Admins sauvegardés');
+    } catch (error) {
+        console.error('❌ Erreur sauvegarde admins:', error);
+    }
 }
 
 // Fonction pour supprimer l'ancien message actif
@@ -154,34 +223,41 @@ async function updateMessage(chatId, messageId, text, options = {}) {
 // Fonction pour envoyer le message d'accueil
 async function sendWelcomeMessage(chatId, editMessageId = null, userInfo = null) {
     try {
-        const welcomeMessage = `Bienvenue ! 👋
-📦 Tous nos produits sont disponibles juste en bas ⬇️
-Clique sur la mini-application pour découvrir notre catalogue complet ⛽️`;
+        let personalizedMessage = config.welcomeMessage || 'Bienvenue !';
         
-        const keyboard = {
-            inline_keyboard: [
-                [{ text: '🛍 Boutique CaliGaz', web_app: { url: 'https://caligaz.vercel.app' } }],
-                [{ text: 'ℹ️ Informations', callback_data: 'info' }],
-                [
-                    { text: '📸 Instagram', url: 'https://instagram.com/caligaz' },
-                    { text: '💬 Telegram', url: 'https://t.me/caligaz' }
-                ],
-                [
-                    { text: '🥔 Potato', url: 'https://potato.im/caligaz' },
-                    { text: '📡 Signal', url: 'https://signal.me/#p/+33612345678' }
-                ]
-            ]
-        };
+        if (userInfo) {
+            personalizedMessage = personalizedMessage
+                .replace(/{firstname}/gi, userInfo.first_name || '')
+                .replace(/{lastname}/gi, userInfo.last_name || '')
+                .replace(/{username}/gi, userInfo.username ? `@${userInfo.username}` : '')
+                .replace(/{fullname}/gi, `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim());
+        }
         
         const options = {
-            reply_markup: keyboard,
+            reply_markup: getMainKeyboard(config),
             parse_mode: 'HTML'
         };
 
-        if (editMessageId && activeMessages[chatId] === editMessageId) {
-            await updateMessage(chatId, editMessageId, welcomeMessage, options);
+        if (config.welcomeImage) {
+            const imagePath = getImagePath(config.welcomeImage);
+            if (fs.existsSync(imagePath)) {
+                await sendNewPhoto(chatId, imagePath, {
+                    caption: personalizedMessage,
+                    ...options
+                });
+            } else {
+                if (editMessageId && activeMessages[chatId] === editMessageId) {
+                    await updateMessage(chatId, editMessageId, personalizedMessage, options);
+                } else {
+                    await sendNewMessage(chatId, personalizedMessage, options);
+                }
+            }
         } else {
-            await sendNewMessage(chatId, welcomeMessage, options);
+            if (editMessageId && activeMessages[chatId] === editMessageId) {
+                await updateMessage(chatId, editMessageId, personalizedMessage, options);
+            } else {
+                await sendNewMessage(chatId, personalizedMessage, options);
+            }
         }
     } catch (error) {
         console.error('Erreur lors de l\'envoi du message d\'accueil:', error);
@@ -191,7 +267,6 @@ Clique sur la mini-application pour découvrir notre catalogue complet ⛽️`;
 
 // Commande /start
 bot.onText(/\/start/, async (msg) => {
-    console.log('🚀 Commande /start reçue de:', msg.from.username || msg.from.id);
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     
@@ -199,11 +274,50 @@ bot.onText(/\/start/, async (msg) => {
     
     try {
         await bot.deleteMessage(chatId, msg.message_id);
-    } catch (error) {
-        console.error('Erreur suppression message:', error.message);
-    }
+    } catch (error) {}
     
     await sendWelcomeMessage(chatId, null, msg.from);
+});
+
+// Commande /help - Afficher toutes les commandes disponibles
+bot.onText(/\/help/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    
+    try {
+        await bot.deleteMessage(chatId, msg.message_id);
+    } catch (error) {}
+    
+    let helpMessage = `📚 **Commandes disponibles**\n\n`;
+    helpMessage += `**Commandes générales:**\n`;
+    helpMessage += `/start - Démarrer le bot\n`;
+    helpMessage += `/help - Afficher cette aide\n`;
+    helpMessage += `/id - Obtenir votre ID Telegram\n`;
+    helpMessage += `/status - Vérifier l'état du webhook\n\n`;
+    
+    if (admins.has(userId)) {
+        helpMessage += `**Commandes administrateur:**\n`;
+        helpMessage += `/admin - Menu administrateur\n`;
+        helpMessage += `/reset - Réinitialiser la configuration\n`;
+        helpMessage += `/stats - Voir les statistiques rapides\n\n`;
+        helpMessage += `**Gestion disponible dans /admin:**\n`;
+        helpMessage += `• Modifier le message d'accueil\n`;
+        helpMessage += `• Changer la photo d'accueil\n`;
+        helpMessage += `• Gérer les réseaux sociaux\n`;
+        helpMessage += `• Configurer la mini app\n`;
+        helpMessage += `• Gérer les administrateurs\n`;
+        helpMessage += `• Diffuser des messages\n`;
+        helpMessage += `• Exporter les utilisateurs\n`;
+    }
+    
+    await sendNewMessage(chatId, helpMessage, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [[
+                { text: '❌ Fermer', callback_data: 'admin_close' }
+            ]]
+        }
+    });
 });
 
 // Commande /id
@@ -234,6 +348,110 @@ bot.onText(/\/id/, async (msg) => {
     });
 });
 
+// Commande /status - Vérifier l'état du webhook
+bot.onText(/\/status/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    
+    try {
+        await bot.deleteMessage(chatId, msg.message_id);
+    } catch (error) {}
+    
+    try {
+        const webhookInfo = await bot.getWebHookInfo();
+        const uptime = process.uptime();
+        const uptimeHours = Math.floor(uptime / 3600);
+        const uptimeMinutes = Math.floor((uptime % 3600) / 60);
+        const uptimeSeconds = Math.floor(uptime % 60);
+        
+        const statusMessage = `📊 **Status du Bot**\n\n` +
+            `✅ **Mode:** Webhook\n` +
+            `🔗 **URL:** ${webhookInfo.url ? 'Configuré ✅' : 'Non configuré ❌'}\n` +
+            `📨 **Messages en attente:** ${webhookInfo.pending_update_count || 0}\n` +
+            `⏱️ **Uptime:** ${uptimeHours}h ${uptimeMinutes}m ${uptimeSeconds}s\n` +
+            `🌐 **Plateforme:** Render\n` +
+            `🚀 **Version:** Webhook 1.0\n` +
+            `${webhookInfo.last_error_date ? `⚠️ **Dernière erreur:** ${new Date(webhookInfo.last_error_date * 1000).toLocaleString()}` : ''}`;
+        
+        await sendNewMessage(chatId, statusMessage, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: '🔄 Actualiser', callback_data: 'refresh_status' },
+                    { text: '❌ Fermer', callback_data: 'admin_close' }
+                ]]
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de la récupération du statut:', error);
+        await sendNewMessage(chatId, '❌ Erreur lors de la récupération du statut');
+    }
+});
+
+// Commande /stats - Statistiques rapides (admin uniquement)
+bot.onText(/\/stats/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    
+    try {
+        await bot.deleteMessage(chatId, msg.message_id);
+    } catch (error) {}
+    
+    if (!admins.has(userId)) {
+        await sendNewMessage(chatId, '❌ Vous n\'êtes pas autorisé à voir les statistiques.');
+        return;
+    }
+    
+    const totalUsers = users.size;
+    const totalAdmins = admins.size;
+    const uptime = process.uptime();
+    const uptimeHours = Math.floor(uptime / 3600);
+    const uptimeMinutes = Math.floor((uptime % 3600) / 60);
+    
+    const statsMessage = `📊 **Statistiques rapides**\n\n` +
+        `👥 Utilisateurs: ${totalUsers}\n` +
+        `👑 Admins: ${totalAdmins}\n` +
+        `⏱️ Uptime: ${uptimeHours}h ${uptimeMinutes}m\n` +
+        `🌐 Mode: Webhook\n` +
+        `📅 ${new Date().toLocaleString('fr-FR')}`;
+    
+    await sendNewMessage(chatId, statsMessage, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [[
+                { text: '📊 Détails complets', callback_data: 'admin_stats' },
+                { text: '❌ Fermer', callback_data: 'admin_close' }
+            ]]
+        }
+    });
+});
+
+// Commande /reset - Réinitialiser la configuration (admin uniquement)
+bot.onText(/\/reset/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    
+    try {
+        await bot.deleteMessage(chatId, msg.message_id);
+    } catch (error) {}
+    
+    if (!admins.has(userId)) {
+        await sendNewMessage(chatId, '❌ Vous n\'êtes pas autorisé à réinitialiser la configuration.');
+        return;
+    }
+    
+    config = await resetConfig();
+    
+    await sendNewMessage(chatId, '🔄 Configuration réinitialisée avec succès!\n\nLa configuration par défaut Caligaz a été restaurée.', {
+        reply_markup: {
+            inline_keyboard: [[
+                { text: '🔧 Menu Admin', callback_data: 'admin_menu' },
+                { text: '❌ Fermer', callback_data: 'admin_close' }
+            ]]
+        }
+    });
+});
+
 // Commande /admin
 bot.onText(/\/admin/, async (msg) => {
     const chatId = msg.chat.id;
@@ -248,35 +466,8 @@ bot.onText(/\/admin/, async (msg) => {
         return;
     }
 
-    const adminMenu = `🔧 <b>Panel Admin CaliGaz ⛽️</b>
-
-👤 Admin: ${msg.from.first_name || 'Admin'}
-🆔 ID: ${userId}
-📅 Date: ${new Date().toLocaleDateString('fr-FR')}
-
-Sélectionnez une option:`;
-
-    await sendNewMessage(chatId, adminMenu, {
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard: [
-                [
-                    { text: '📊 Statistiques', callback_data: 'admin_stats' },
-                    { text: '👥 Utilisateurs', callback_data: 'admin_users' }
-                ],
-                [
-                    { text: '📢 Broadcast', callback_data: 'admin_broadcast' },
-                    { text: '⚙️ Configuration', callback_data: 'admin_config' }
-                ],
-                [
-                    { text: '📦 Produits', callback_data: 'admin_products' },
-                    { text: '📋 Commandes', callback_data: 'admin_orders' }
-                ],
-                [
-                    { text: '❌ Fermer', callback_data: 'admin_close' }
-                ]
-            ]
-        }
+    await sendNewMessage(chatId, '🔧 Menu Administrateur', {
+        reply_markup: getAdminKeyboard()
     });
 });
 
@@ -300,32 +491,6 @@ bot.on('callback_query', async (callbackQuery) => {
     try {
         switch (data) {
             case 'info':
-                const infoText = `🏪 <b>CaliGaz ⛽️</b>
-
-📍 <b>Nos Points de Vente:</b>
-• Paris - Île-de-France
-• Barcelone - Espagne 🇪🇸
-
-⏰ <b>Horaires:</b>
-Lundi - Dimanche: 10h00 - 02h00
-
-📞 <b>Contact:</b>
-• Telegram: @caligaz
-• Instagram: @caligaz
-• Signal: +33 6 12 34 56 78
-
-💳 <b>Modes de paiement:</b>
-• Espèces
-• Crypto (BTC, ETH, USDT)
-• Virement
-
-🚚 <b>Livraison:</b>
-• Livraison rapide disponible
-• Minimum de commande: 100g
-
-✅ Qualité garantie
-🔒 Discrétion assurée`;
-
                 const infoOptions = {
                     parse_mode: 'HTML',
                     reply_markup: {
@@ -335,7 +500,19 @@ Lundi - Dimanche: 10h00 - 02h00
                     }
                 };
                 
-                await updateMessage(chatId, messageId, infoText, infoOptions);
+                if (config.welcomeImage) {
+                    const imagePath = getImagePath(config.welcomeImage);
+                    if (fs.existsSync(imagePath)) {
+                        await sendNewPhoto(chatId, imagePath, {
+                            caption: config.infoText,
+                            ...infoOptions
+                        });
+                    } else {
+                        await updateMessage(chatId, messageId, config.infoText, infoOptions);
+                    }
+                } else {
+                    await updateMessage(chatId, messageId, config.infoText, infoOptions);
+                }
                 break;
 
             case 'back_to_main':
@@ -620,6 +797,47 @@ Lundi - Dimanche: 10h00 - 02h00
                 });
                 break;
 
+            case 'refresh_status':
+                try {
+                    const webhookInfo = await bot.getWebHookInfo();
+                    const uptime = process.uptime();
+                    const uptimeHours = Math.floor(uptime / 3600);
+                    const uptimeMinutes = Math.floor((uptime % 3600) / 60);
+                    const uptimeSeconds = Math.floor(uptime % 60);
+                    
+                    const statusMessage = `📊 **Status du Bot**\n\n` +
+                        `✅ **Mode:** Webhook\n` +
+                        `🔗 **URL:** ${webhookInfo.url ? 'Configuré ✅' : 'Non configuré ❌'}\n` +
+                        `📨 **Messages en attente:** ${webhookInfo.pending_update_count || 0}\n` +
+                        `⏱️ **Uptime:** ${uptimeHours}h ${uptimeMinutes}m ${uptimeSeconds}s\n` +
+                        `🌐 **Plateforme:** Render\n` +
+                        `🚀 **Version:** Webhook 1.0\n` +
+                        `${webhookInfo.last_error_date ? `⚠️ **Dernière erreur:** ${new Date(webhookInfo.last_error_date * 1000).toLocaleString()}` : ''}\n\n` +
+                        `_Actualisé à ${new Date().toLocaleTimeString()}_`;
+                    
+                    await updateMessage(chatId, messageId, statusMessage, {
+                        parse_mode: 'Markdown',
+                        reply_markup: {
+                            inline_keyboard: [[
+                                { text: '🔄 Actualiser', callback_data: 'refresh_status' },
+                                { text: '❌ Fermer', callback_data: 'admin_close' }
+                            ]]
+                        }
+                    });
+                    
+                    await bot.answerCallbackQuery(callbackQuery.id, {
+                        text: '✅ Statut actualisé!',
+                        show_alert: false
+                    });
+                } catch (error) {
+                    console.error('Erreur lors de l\'actualisation du statut:', error);
+                    await bot.answerCallbackQuery(callbackQuery.id, {
+                        text: '❌ Erreur lors de l\'actualisation',
+                        show_alert: true
+                    });
+                }
+                break;
+
             case 'admin_close':
                 await deleteActiveMessage(chatId);
                 break;
@@ -664,7 +882,7 @@ Lundi - Dimanche: 10h00 - 02h00
                     const adminToRemove = parseInt(data.replace('remove_admin_', ''));
                     if (admins.has(adminToRemove) && adminToRemove !== ADMIN_ID) {
                         admins.delete(adminToRemove);
-                        saveAdmins();
+                        saveAdminsData();
                         await bot.answerCallbackQuery(callbackQuery.id, {
                             text: '✅ Administrateur retiré!',
                             show_alert: true
@@ -871,7 +1089,7 @@ bot.on('message', async (msg) => {
                         const newAdminUsername = newAdminChat.username ? `@${newAdminChat.username}` : '';
                         
                         admins.add(newAdminId);
-                        saveAdmins();
+                        saveAdminsData();
                         delete userStates[userId];
                         
                         try {
@@ -991,47 +1209,24 @@ bot.on('photo', async (msg) => {
 // Démarrer le serveur Express
 app.listen(PORT, async () => {
     console.log(`🌐 Serveur démarré sur le port ${PORT}`);
-    console.log(`🌍 URL du service: ${WEBHOOK_URL}`);
-    
-    // Attendre un peu avant de configurer le webhook
-    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Configurer le webhook
     const webhookUrl = `${WEBHOOK_URL}/bot${process.env.BOT_TOKEN}`;
     try {
-        console.log('🔄 Configuration du webhook en cours...');
-        
         // Supprimer l'ancien webhook s'il existe
         await bot.deleteWebHook();
-        console.log('✅ Ancien webhook supprimé');
-        
-        // Attendre un peu
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         // Configurer le nouveau webhook
-        const result = await bot.setWebHook(webhookUrl);
+        await bot.setWebHook(webhookUrl);
         console.log(`🔗 Webhook configuré: ${webhookUrl}`);
-        console.log('   Résultat:', result);
         
         // Vérifier le webhook
         const webhookInfo = await bot.getWebHookInfo();
-        console.log('📍 Webhook info:');
-        console.log('   URL:', webhookInfo.url);
-        console.log('   Pending updates:', webhookInfo.pending_update_count);
-        if (webhookInfo.last_error_message) {
-            console.log('   ⚠️ Dernière erreur:', webhookInfo.last_error_message);
-        }
+        console.log('📍 Webhook info:', webhookInfo);
     } catch (error) {
-        console.error('❌ Erreur lors de la configuration du webhook:', error.message);
-        console.error('   Détails:', error);
+        console.error('❌ Erreur lors de la configuration du webhook:', error);
     }
     
-    console.log('🤖 Bot démarré avec succès en mode webhook!');
+    console.log('⛽ Bot CaliGaz démarré avec succès en mode webhook!');
     console.log(`📱 Parlez au bot: https://t.me/${process.env.BOT_USERNAME || 'caligazbot_bot'}`);
     console.log(`🔧 ID Admin: ${ADMIN_ID}`);
-    console.log('\n📊 Routes disponibles:');
-    console.log(`   GET  ${WEBHOOK_URL}/`);
-    console.log(`   GET  ${WEBHOOK_URL}/health`);
-    console.log(`   GET  ${WEBHOOK_URL}/webhook-info`);
-    console.log(`   POST ${WEBHOOK_URL}/bot[TOKEN]`);
 });
