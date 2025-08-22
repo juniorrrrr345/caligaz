@@ -22,33 +22,16 @@ if (!process.env.ADMIN_ID) {
 }
 
 // URL de votre app Render
-const WEBHOOK_URL = process.env.WEBHOOK_URL || `https://caligaz-bot.onrender.com`;
+const WEBHOOK_URL = process.env.WEBHOOK_URL || `https://caligaz.onrender.com`;
 
 // Initialiser le bot en mode webhook
 const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: true });
 const ADMIN_ID = parseInt(process.env.ADMIN_ID);
 
-// Configuration du webhook au démarrage
-const setupWebhook = async () => {
-    try {
-        const webhookPath = `/bot${process.env.BOT_TOKEN}`;
-        const fullWebhookUrl = `${WEBHOOK_URL}${webhookPath}`;
-        
-        console.log('🔗 Configuration du webhook:', fullWebhookUrl);
-        
-        // Définir le webhook
-        await bot.setWebHook(fullWebhookUrl);
-        
-        // Vérifier le webhook
-        const webhookInfo = await bot.getWebHookInfo();
-        console.log('✅ Webhook configuré:', webhookInfo);
-    } catch (error) {
-        console.error('❌ Erreur lors de la configuration du webhook:', error);
-    }
-};
-
-// Appeler setupWebhook après le démarrage du serveur
-setTimeout(setupWebhook, 3000);
+console.log('🔧 Configuration du bot:');
+console.log('   Token:', process.env.BOT_TOKEN ? '✅ Défini' : '❌ Manquant');
+console.log('   Admin ID:', ADMIN_ID);
+console.log('   Webhook URL:', WEBHOOK_URL);
 
 // Middleware Express
 app.use(express.json());
@@ -68,6 +51,22 @@ app.get('/', (req, res) => {
 // Route de santé
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Route de test webhook
+app.get('/webhook-info', async (req, res) => {
+    try {
+        const webhookInfo = await bot.getWebHookInfo();
+        res.json({
+            webhook_url: webhookInfo.url,
+            pending_update_count: webhookInfo.pending_update_count,
+            last_error_date: webhookInfo.last_error_date,
+            last_error_message: webhookInfo.last_error_message,
+            expected_url: `${WEBHOOK_URL}/bot${process.env.BOT_TOKEN}`
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // État des utilisateurs (pour gérer les conversations)
@@ -958,24 +957,47 @@ bot.on('photo', async (msg) => {
 // Démarrer le serveur Express
 app.listen(PORT, async () => {
     console.log(`🌐 Serveur démarré sur le port ${PORT}`);
+    console.log(`🌍 URL du service: ${WEBHOOK_URL}`);
+    
+    // Attendre un peu avant de configurer le webhook
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Configurer le webhook
     const webhookUrl = `${WEBHOOK_URL}/bot${process.env.BOT_TOKEN}`;
     try {
+        console.log('🔄 Configuration du webhook en cours...');
+        
         // Supprimer l'ancien webhook s'il existe
         await bot.deleteWebHook();
+        console.log('✅ Ancien webhook supprimé');
+        
+        // Attendre un peu
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Configurer le nouveau webhook
-        await bot.setWebHook(webhookUrl);
+        const result = await bot.setWebHook(webhookUrl);
         console.log(`🔗 Webhook configuré: ${webhookUrl}`);
+        console.log('   Résultat:', result);
         
         // Vérifier le webhook
         const webhookInfo = await bot.getWebHookInfo();
-        console.log('📍 Webhook info:', webhookInfo);
+        console.log('📍 Webhook info:');
+        console.log('   URL:', webhookInfo.url);
+        console.log('   Pending updates:', webhookInfo.pending_update_count);
+        if (webhookInfo.last_error_message) {
+            console.log('   ⚠️ Dernière erreur:', webhookInfo.last_error_message);
+        }
     } catch (error) {
-        console.error('❌ Erreur lors de la configuration du webhook:', error);
+        console.error('❌ Erreur lors de la configuration du webhook:', error.message);
+        console.error('   Détails:', error);
     }
     
     console.log('🤖 Bot démarré avec succès en mode webhook!');
-    console.log(`📱 Parlez au bot: https://t.me/${process.env.BOT_USERNAME || 'jsjshsheejdbot'}`);
+    console.log(`📱 Parlez au bot: https://t.me/${process.env.BOT_USERNAME || 'caligazbot_bot'}`);
     console.log(`🔧 ID Admin: ${ADMIN_ID}`);
+    console.log('\n📊 Routes disponibles:');
+    console.log(`   GET  ${WEBHOOK_URL}/`);
+    console.log(`   GET  ${WEBHOOK_URL}/health`);
+    console.log(`   GET  ${WEBHOOK_URL}/webhook-info`);
+    console.log(`   POST ${WEBHOOK_URL}/bot[TOKEN]`);
 });
