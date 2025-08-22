@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb-fixed';
 import Settings from '@/models/Settings';
 import { CartItem } from '@/lib/cartStore';
+import { sendOrderNotification } from '@/lib/telegram';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,14 +12,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Panier vide' }, { status: 400 });
     }
     
-    // Récupérer le username Telegram depuis les settings
+    // Récupérer le username Telegram depuis les settings (optionnel maintenant)
     const { db } = await connectToDatabase();
     const settings = await db.collection('settings').findOne({});
     const telegramUsername = settings?.telegramUsername;
-    
-    if (!telegramUsername) {
-      return NextResponse.json({ error: 'Configuration Telegram manquante' }, { status: 500 });
-    }
     
     // Formater la date
     const now = new Date();
@@ -61,19 +58,26 @@ export async function POST(request: NextRequest) {
     message += `📞 Merci de confirmer cette commande et les modalités de livraison/paiement.\n`;
     message += `🚚 Livraison disponible ou retrait sur place.`;
     
-    // Ici, vous devrez intégrer l'API Telegram Bot pour envoyer le message
-    // Pour l'instant, on simule l'envoi
-    console.log('Message à envoyer:', message);
-    console.log('Destinataire:', telegramUsername);
+    // Si un username Telegram est configuré, l'ajouter au message
+    if (telegramUsername) {
+      message += `\n\n📱 Contact: @${telegramUsername}`;
+    }
     
-    // TODO: Intégrer l'API Telegram Bot
-    // const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    // await sendTelegramMessage(telegramUsername, message);
+    // Envoyer le message via Telegram
+    console.log('📤 Envoi de la commande via Telegram...');
+    const sent = await sendOrderNotification(message);
+    
+    if (!sent) {
+      console.error('⚠️ Échec de l\'envoi via Telegram, mais commande enregistrée');
+      // On ne bloque pas la commande si Telegram échoue
+      // Vous pouvez stocker la commande en base de données ici
+    }
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Commande envoyée avec succès',
-      orderDetails: message 
+      message: sent ? 'Commande envoyée avec succès' : 'Commande enregistrée (envoi Telegram échoué)',
+      orderDetails: message,
+      telegramSent: sent
     });
     
   } catch (error) {
