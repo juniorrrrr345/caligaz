@@ -80,8 +80,9 @@ export async function POST(request: NextRequest) {
 
         // Ajouter optimisations seulement si nécessaire
         if (!isVideo) {
-          uploadOptions.quality = 'auto';
+          // Supprimé quality: 'auto' pour économiser les crédits Cloudinary
           uploadOptions.width = 800;
+          uploadOptions.height = 600;
           uploadOptions.crop = 'limit';
         }
 
