@@ -12,8 +12,8 @@ const { MongoClient } = require('mongodb');
 const CONFIG = {
   cloudflare: {
     accountId: '7979421604bd07b3bd34d3ed96222512',
-    // Token unifié pour Stream et Images
-    streamToken: '61mW7CZfq0K6OdcYN9YIC4laRaZNLZAL1Lm4gFhh',
+    // Token pour Cloudflare Stream (vidéos) - Token complet
+    streamToken: 'v1.0-0adb38df485d3d0888b0b922-5ac29b791eaf12b48dea2d5f3c1bf0680c0c8ab85b0b2d7f0edbf7b9684f79d71d4c3b8a9ebe8df4ec7ab5fcd2862fc01d1caf666e306b8d40f405a52926a3ce108bf1484f9ba3ade5',
     // Token pour Cloudflare Images (photos)
     imagesToken: '61mW7CZfq0K6OdcYN9YIC4laRaZNLZAL1Lm4gFhh',
     imageAccountHash: 'ARYXrwYsY_ECAYN3cIpzBg'

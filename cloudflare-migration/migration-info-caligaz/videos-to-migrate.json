@@ -1,0 +1,90 @@
+{
+  "boutique": "CALIGAZ",
+  "date": "2025-08-27T04:04:02.273Z",
+  "videos": [
+    {
+      "productId": "688f3000fe98d7b1cf6c48ef",
+      "productName": "Jaune 🧽 Avion",
+      "originalUrl": "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754214360/boutique_videos/upload_1754214360506.mp4",
+      "alternatives": [
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754214360/boutique_videos/upload_1754214360506.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/q_auto/v1754214360/boutique_videos/upload_1754214360506.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/sp_hd/v1754214360/boutique_videos/upload_1754214360506.mp4.m3u8"
+      ],
+      "status": "pending",
+      "accessible": true,
+      "size": "630252",
+      "type": "video/mp4;codecs=avc1"
+    },
+    {
+      "productId": "6894b3720fc10be3664cbccf",
+      "productName": "Sherbet ",
+      "originalUrl": "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754575651/boutique_videos/upload_1754575650948.mp4",
+      "alternatives": [
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754575651/boutique_videos/upload_1754575650948.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/q_auto/v1754575651/boutique_videos/upload_1754575650948.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/sp_hd/v1754575651/boutique_videos/upload_1754575650948.mp4.m3u8"
+      ],
+      "status": "pending",
+      "accessible": true,
+      "size": "695718",
+      "type": "video/mp4;codecs=avc1"
+    },
+    {
+      "productId": "6894b41f0fc10be3664cbcd0",
+      "productName": "Carbone Fiber ",
+      "originalUrl": "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754575798/boutique_videos/upload_1754575798199.mp4",
+      "alternatives": [
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754575798/boutique_videos/upload_1754575798199.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/q_auto/v1754575798/boutique_videos/upload_1754575798199.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/sp_hd/v1754575798/boutique_videos/upload_1754575798199.mp4.m3u8"
+      ],
+      "status": "pending",
+      "accessible": true,
+      "size": "812887",
+      "type": "video/mp4;codecs=avc1"
+    },
+    {
+      "productId": "6894b4b10fc10be3664cbcd1",
+      "productName": "Gusher ",
+      "originalUrl": "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754576001/boutique_videos/upload_1754576001234.mp4",
+      "alternatives": [
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754576001/boutique_videos/upload_1754576001234.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/q_auto/v1754576001/boutique_videos/upload_1754576001234.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/sp_hd/v1754576001/boutique_videos/upload_1754576001234.mp4.m3u8"
+      ],
+      "status": "pending",
+      "accessible": true,
+      "size": "843213",
+      "type": "video/mp4;codecs=avc1"
+    },
+    {
+      "productId": "6894b53e0fc10be3664cbcd2",
+      "productName": "Arai Sherb ",
+      "originalUrl": "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754576154/boutique_videos/upload_1754576153789.mp4",
+      "alternatives": [
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/v1754576154/boutique_videos/upload_1754576153789.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/q_auto/v1754576154/boutique_videos/upload_1754576153789.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/sp_hd/v1754576154/boutique_videos/upload_1754576153789.mp4.m3u8"
+      ],
+      "status": "pending",
+      "accessible": true,
+      "size": "924261",
+      "type": "video/mp4;codecs=avc1"
+    },
+    {
+      "productId": "68a6ef87f32efebb914f987a",
+      "productName": "Hash Dry Cali 🇺🇸🇺🇸",
+      "originalUrl": "https://res.cloudinary.com/dagnmkw0e/video/upload/v1755770642/boutique_videos/upload_1755770641895.mp4",
+      "alternatives": [
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/v1755770642/boutique_videos/upload_1755770641895.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/q_auto/v1755770642/boutique_videos/upload_1755770641895.mp4",
+        "https://res.cloudinary.com/dagnmkw0e/video/upload/sp_hd/v1755770642/boutique_videos/upload_1755770641895.mp4.m3u8"
+      ],
+      "status": "pending",
+      "accessible": true,
+      "size": "2676080",
+      "type": "video/mp4;codecs=avc1"
+    }
+  ]
+}
