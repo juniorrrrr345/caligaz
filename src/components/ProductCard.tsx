@@ -1,3 +1,5 @@
+import CloudflareImage from './CloudflareImage';
+
 interface Product {
   _id: string;
   name: string;
@@ -29,11 +31,12 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
     >
       {/* Container image avec badge */}
       <div className="relative aspect-square overflow-hidden">
-        <img 
-          src={product.image}
+        <CloudflareImage
+          url={product.image}
           alt={product.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
+          variant="public"
           sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
         />
         

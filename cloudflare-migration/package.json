@@ -1,0 +1,29 @@
+{
+  "name": "cloudflare-media-migration",
+  "version": "1.0.0",
+  "description": "Migration automatique des médias vers Cloudflare avec organisation par boutique",
+  "main": "index.js",
+  "scripts": {
+    "migrate:caligaz": "node migrate-caligaz.js",
+    "migrate:all": "node migrate-all.js",
+    "verify": "node verify-migration.js",
+    "update:frontend": "node update-frontend.js",
+    "test": "node test-connection.js"
+  },
+  "keywords": [
+    "cloudflare",
+    "migration",
+    "media",
+    "stream",
+    "images"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "cloudinary": "^2.0.0",
+    "dotenv": "^16.3.1",
+    "form-data": "^4.0.0",
+    "mongodb": "^6.3.0"
+  }
+}

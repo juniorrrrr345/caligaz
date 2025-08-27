@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10",
     "axios": "^1.11.0",
     "cloudinary": "^2.7.0",
     "dotenv": "^16.4.5",
@@ -20,18 +24,14 @@
     "multer": "^2.0.2",
     "next": "14.2.30",
     "node-telegram-bot-api": "^0.66.0",
+    "postcss": "^8",
     "react": "^18",
     "react-dom": "^18",
     "react-hot-toast": "^2.5.2",
     "sharp": "^0.34.3",
-    "zustand": "^5.0.7",
-    "autoprefixer": "^10",
-    "postcss": "^8",
     "tailwindcss": "^3",
     "typescript": "^5",
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18"
+    "zustand": "^5.0.7"
   },
   "devDependencies": {
     "eslint": "^8",

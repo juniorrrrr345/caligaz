@@ -4,6 +4,8 @@ import { Product } from './ProductCard';
 import { useCartStore } from '@/lib/cartStore';
 import { ShoppingCart } from 'lucide-react';
 import toast from 'react-hot-toast';
+import CloudflareVideo from './CloudflareVideo';
+import CloudflareImage from './CloudflareImage';
 
 interface ProductDetailProps {
   product: Product | null;
@@ -91,21 +93,22 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
           {/* Image ou vidéo */}
           <div className="relative w-full aspect-square bg-black">
             {product.video ? (
-              <video 
+              <CloudflareVideo
+                url={product.video}
+                title={product.name}
                 className="w-full h-full object-contain"
-                autoPlay 
-                loop 
-                muted 
-                playsInline
-                controls
-              >
-                <source src={product.video} type="video/mp4" />
-              </video>
+                autoplay={true}
+                loop={true}
+                muted={true}
+                controls={true}
+              />
             ) : (
-              <img 
-                src={product.image} 
+              <CloudflareImage
+                url={product.image}
                 alt={product.name}
                 className="w-full h-full object-contain"
+                variant="large"
+                loading="eager"
               />
             )}
           </div>
