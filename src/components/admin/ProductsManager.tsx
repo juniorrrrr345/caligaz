@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import MediaUploader from './MediaUploader';
-import CloudinaryUploader from './CloudinaryUploader';
+import CloudflareUploader from './CloudflareUploader';
 import { MenuType, MenuConfig } from '@/types';
 
 interface Product {
@@ -1081,17 +1081,16 @@ export default function ProductsManager() {
                     <div className="bg-gray-800/50 border border-white/10 rounded-lg p-4 mb-3">
                       <div className="text-sm text-gray-300 mb-3 font-medium">Choisir la méthode d'upload :</div>
                       
-                      {/* Upload Cloudinary (recommandé) */}
+                      {/* Upload Cloudflare (recommandé) */}
                       <div className="mb-3">
-                        <div className="text-xs text-green-400 mb-2">✅ Recommandé - Hébergement cloud</div>
-                        <CloudinaryUploader
-                          onMediaSelected={(url, type) => {
+                        <div className="text-xs text-blue-400 mb-2">⚡ Cloudflare - Performance optimale</div>
+                        <CloudflareUploader
+                          onUploadComplete={(url, type) => {
                             if (type === 'image') {
                               updateField('image', url);
                             }
                           }}
-                          acceptedTypes="image/*"
-                          className="mb-2"
+                          accept="image/*"
                         />
                       </div>
                       
@@ -1143,17 +1142,16 @@ export default function ProductsManager() {
                     <div className="bg-gray-800/50 border border-white/10 rounded-lg p-4 mb-3">
                       <div className="text-sm text-gray-300 mb-3 font-medium">Choisir la méthode d'upload :</div>
                       
-                      {/* Upload Cloudinary (recommandé pour vidéos) */}
+                      {/* Upload Cloudflare (recommandé pour vidéos) */}
                       <div className="mb-3">
-                        <div className="text-xs text-green-400 mb-2">✅ Recommandé - Hébergement cloud illimité</div>
-                        <CloudinaryUploader
-                          onMediaSelected={(url, type) => {
+                        <div className="text-xs text-blue-400 mb-2">⚡ Cloudflare Stream - Streaming optimisé</div>
+                        <CloudflareUploader
+                          onUploadComplete={(url, type) => {
                             if (type === 'video') {
                               updateField('video', url);
                             }
                           }}
-                          acceptedTypes="video/*,.mov,.avi,.3gp"
-                          className="mb-2"
+                          accept="video/*,.mov,.avi,.3gp"
                         />
                       </div>
                       
@@ -1392,14 +1390,13 @@ export default function ProductsManager() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Image du produit</label>
-                      <CloudinaryUploader
-                        onMediaSelected={(url, type) => {
+                      <CloudflareUploader
+                        onUploadComplete={(url, type) => {
                           if (type === 'image') {
                             updateField('image', url);
                           }
                         }}
-                        acceptedTypes="image/*"
-                        className="mb-3"
+                        accept="image/*"
                       />
                       <input
                         type="text"
@@ -1419,14 +1416,13 @@ export default function ProductsManager() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Vidéo (optionnel)</label>
-                      <CloudinaryUploader
-                        onMediaSelected={(url, type) => {
+                      <CloudflareUploader
+                        onUploadComplete={(url, type) => {
                           if (type === 'video') {
                             updateField('video', url);
                           }
                         }}
-                        acceptedTypes="video/*"
-                        className="mb-3"
+                        accept="video/*"
                       />
                       <input
                         type="text"
