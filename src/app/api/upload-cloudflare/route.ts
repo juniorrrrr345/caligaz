@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import FormData from 'form-data';
-
-// Configuration Cloudflare
-const CLOUDFLARE_CONFIG = {
-  accountId: '7979421604bd07b3bd34d3ed96222512',
-  // Token pour Images
-  imagesToken: process.env.CLOUDFLARE_IMAGES_TOKEN || '61mW7CZfq0K6OdcYN9YIC4laRaZNLZAL1Lm4gFhh',
-  // Token pour Stream - à mettre à jour avec un token valide
-  streamToken: process.env.CLOUDFLARE_STREAM_TOKEN || '61mW7CZfq0K6OdcYN9YIC4laRaZNLZAL1Lm4gFhh',
-  imageAccountHash: 'ARYXrwYsY_ECAYN3cIpzBg'
-};
+import { CLOUDFLARE_CONFIG, getCloudflareImageUrl, getCloudflareVideoUrl } from '@/lib/cloudflare-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,14 +77,51 @@ export async function POST(request: NextRequest) {
  */
 async function uploadVideoToStream(buffer: Buffer, filename: string): Promise<string> {
   try {
-    // Pour l'instant, utiliser l'API de copie depuis URL si possible
-    // ou retourner une URL temporaire
-    console.log('⚠️ Upload Stream non disponible - token invalide');
+    const form = new FormData();
+    form.append('file', buffer, {
+      filename: filename,
+      contentType: 'video/mp4'
+    });
     
-    // Retourner null pour forcer le fallback
-    return '';
+    // Métadonnées pour la vidéo
+    const metadata = {
+      name: filename,
+      boutique: 'CALIGAZ',
+      uploadedAt: new Date().toISOString(),
+      source: 'admin-panel'
+    };
+    
+    form.append('meta', JSON.stringify(metadata));
+
+    const response = await axios.post(
+      `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_CONFIG.accountId}/stream`,
+      form,
+      {
+        headers: {
+          ...form.getHeaders(),
+          'Authorization': `Bearer ${CLOUDFLARE_CONFIG.tokens.stream}`
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      }
+    );
+
+    if (response.data.success) {
+      const videoId = response.data.result.uid;
+      const playbackUrl = `https://iframe.videodelivery.net/${videoId}`;
+      console.log('✅ Vidéo uploadée sur Stream:', playbackUrl);
+      return playbackUrl;
+    } else {
+      throw new Error(response.data.errors?.[0]?.message || 'Upload Stream échoué');
+    }
   } catch (error: any) {
-    console.error('Erreur upload Stream:', error.message);
+    console.error('❌ Erreur upload Stream:', error.response?.data || error.message);
+    
+    // Si erreur 403, essayer avec l'upload via URL
+    if (error.response?.status === 403) {
+      console.log('⚠️ Token Stream peut nécessiter des permissions supplémentaires');
+    }
+    
     throw error;
   }
 }
@@ -127,7 +155,7 @@ async function uploadImageToCloudflare(buffer: Buffer, filename: string): Promis
       {
         headers: {
           ...form.getHeaders(),
-          'Authorization': `Bearer ${CLOUDFLARE_CONFIG.imagesToken}`
+          'Authorization': `Bearer ${CLOUDFLARE_CONFIG.tokens.images}`
         }
       }
     );
